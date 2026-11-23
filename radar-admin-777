@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel — Nebula</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #181b20;
+    --border: rgba(255,255,255,0.08);
+    --green: #00e701;
+    --text: #ffffff;
+    --muted: #8b949e;
+  }
+  * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body { background: var(--bg); color: var(--text); margin: 0; padding: 16px; }
+  h1 { font-size: 20px; margin: 0 0 16px; display: flex; align-items: center; gap: 8px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+  .title { font-size: 15px; font-weight: 600; margin-bottom: 12px; color: #e6edf3; }
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  input, textarea {
+    width: 100%; background: #0d0f12; border: 1px solid var(--border); color: #fff;
+    border-radius: 10px; padding: 12px; font-size: 15px; margin-bottom: 12px; outline: none;
+  }
+  input:focus, textarea:focus { border-color: var(--green); }
+  .quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
+  .q-btn {
+    background: #23272f; border: 1px solid var(--border); color: #fff; padding: 8px 4px;
+    border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .btn {
+    width: 100%; background: var(--green); color: #051b05; border: none; border-radius: 10px;
+    padding: 13px; font-size: 15px; font-weight: 700; cursor: pointer;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-sec { background: #262b34; color: #fff; margin-top: 8px; }
+  .result {
+    background: #0d0f12; border: 1px dashed rgba(0,231,1,0.4); border-radius: 10px;
+    padding: 12px; margin-top: 12px; font-family: monospace; font-size: 15px;
+    word-break: break-all; display: none; text-align: center;
+  }
+  .status { margin-top: 12px; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 600; display: none; }
+  .ok { background: rgba(0, 231, 1, 0.12); color: #00e701; border: 1px solid rgba(0,231,1,0.3); }
+  .err { background: rgba(255, 77, 77, 0.12); color: #ff5c5c; border: 1px solid rgba(255,77,77,0.3); }
+</style>
+</head>
+<body>
+
+  <h1>🛡️ Админка Nebula</h1>
+
+  <!-- БЛОК 1: ГЕНЕРАТОР КОДОВ ПОПОЛНЕНИЯ -->
+  <div class="card">
+    <div class="title">1. Создать код пополнения (от 500 ⭐)</div>
+    <label>Быстрый выбор суммы:</label>
+    <div class="quick">
+      <button class="q-btn" onclick="setAmt(500)">500 ⭐</button>
+      <button class="q-btn" onclick="setAmt(1000)">1000 ⭐</button>
+      <button class="q-btn" onclick="setAmt(1500)">1500 ⭐</button>
+      <button class="q-btn" onclick="setAmt(2500)">2500 ⭐</button>
+    </div>
+    <label>Или введите свою сумму (минимум 500):</label>
+    <input type="number" id="depAmount" value="500" min="500">
+    <button class="btn" onclick="generatePromo()">Сгенерировать код</button>
+
+    <div class="result" id="promoBox"></div>
+    <button class="btn btn-sec" id="copyBtn" style="display:none;" onclick="copyPromo()">📋 Скопировать код для игрока</button>
+  </div>
+
+  <!-- БЛОК 2: ПРОВЕРКА ЧЕКОВ НА ВЫВОД -->
+  <div class="card">
+    <div class="title">2. Проверить чек игрока на вывод</div>
+    <label>Вставьте текст чека, который прислал игрок:</label>
+    <textarea id="checkInput" rows="4" placeholder="Вставьте сюда текст чека от игрока..."></textarea>
+    <button class="btn" onclick="verifyCheck()">Проверить подлинность</button>
+    <div class="status" id="verifyStatus"></div>
+  </div>
+
+<script>
+  // Секретный ключ (должен совпадать с ключом в игре index.html)
+  const SECRET_SALT = "RADAR777";
+  let lastGeneratedCode = "";
+
+  function setAmt(val) {
+    document.getElementById('depAmount').value = val;
+  }
+
+  async function sha256(message) {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+  }
+
+  async function generatePromo() {
+    const amount = parseInt(document.getElementById('depAmount').value);
+    if (!amount || amount < 500) {
+      alert("Минимальная сумма пополнения — 500 ⭐!");
+      return;
+    }
+    // Случайный 4-значный номер чека
+    const nonce = Math.floor(1000 + Math.random() * 9000);
+    const hash = await sha256(`${SECRET_SALT}:${amount}:${nonce}`);
+    const sig = hash.slice(0, 4);
+
+    // Формат кода: RADAR-СУММА-НОМЕР-ПОДПИСЬ
+    lastGeneratedCode = `RADAR-${amount}-${nonce}-${sig}`;
+
+    const box = document.getElementById('promoBox');
+    box.style.display = 'block';
+    box.textContent = lastGeneratedCode;
+    document.getElementById('copyBtn').style.display = 'block';
+  }
+
+  function copyPromo() {
+    navigator.clipboard.writeText(lastGeneratedCode);
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = "✅ Скопировано!";
+    setTimeout(() => btn.textContent = "📋 Скопировать код для игрока", 2000);
+  }
+
+  async function verifyCheck() {
+    const raw = document.getElementById('checkInput').value.trim();
+    const status = document.getElementById('verifyStatus');
+    status.style.display = 'block';
+
+    // Ищем в тексте чека строку формата: Подарок: [Название] ([Цена] ⭐) | ID: [Номер] | Подпись: [4 символа]
+    const giftMatch = raw.match(/Подарок:\s*(.+?)\s*\((\d+)\s*⭐\)/i);
+    const idMatch = raw.match(/ID:\s*(\d+)/i);
+    const sigMatch = raw.match(/Подпись:\s*([A-Fa-f0-9]{4,8})/i);
+
+    if (!giftMatch || !idMatch || !sigMatch) {
+      status.className = "status err";
+      status.textContent = "❌ Ошибка: неверный формат чека. Убедитесь, что скопирован весь текст.";
+      return;
+    }
+
+    const giftName = giftMatch[1].trim();
+    const price = parseInt(giftMatch[2]);
+    const checkId = idMatch[1].trim();
+    const providedSig = sigMatch[1].toUpperCase();
+
+    if (price < 1100) {
+      status.className = "status err";
+      status.textContent = `❌ Отказ: сумма вывода (${price} ⭐) меньше минимальных 1100 ⭐!`;
+      return;
+    }
+
+    const expectedHash = await sha256(`${SECRET_SALT}:WITHDRAW:${giftName}:${price}:${checkId}`);
+    const expectedSig = expectedHash.slice(0, 6);
+
+    if (providedSig === expectedSig) {
+      status.className = "status ok";
+      status.innerHTML = `✅ ЧЕК ПОДЛИННЫЙ!<br>Можно выдавать: <b>${giftName}</b> (${price} ⭐)`;
+    } else {
+      status.className = "status err";
+      status.textContent = "🚨 ПОДДЕЛКА! Контрольная подпись чека не совпадает.";
+    }
+  }
+</script>
+</body>
+</html>
