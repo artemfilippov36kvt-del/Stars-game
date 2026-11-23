@@ -861,20 +861,17 @@
     border: 1px dashed var(--border-strong);
     border-radius: 12px;
     font-family: 'Courier New', monospace;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text);
     white-space: pre-wrap;
     word-break: break-word;
-    line-height: 1.65;
+    line-height: 1.7;
     margin-bottom: 14px;
     user-select: text;
     -webkit-user-select: text;
     max-height: 300px;
     overflow-y: auto;
   }
-  .receipt-preview .receipt-key { color: var(--text-mute); }
-  .receipt-preview .receipt-val { color: var(--text); font-weight: 700; }
-  .receipt-preview .receipt-hash { color: var(--cyan); word-break: break-all; }
 
   ::-webkit-scrollbar { width: 0; height: 0; }
 
@@ -1183,10 +1180,10 @@
     </div>
 
     <div class="promo-row">
-      <input type="text" id="promoInput" placeholder="Введите код (например, START500)" autocomplete="off" spellcheck="false">
+      <input type="text" id="promoInput" placeholder="RADAR-500-001-XXXX" autocomplete="off" spellcheck="false">
       <button class="btn-main" style="width:auto;padding:0 18px;white-space:nowrap;" id="promoActivateBtn">Активировать</button>
     </div>
-    <div class="promo-hint">Один и тот же код нельзя активировать дважды.</div>
+    <div class="promo-hint">Формат: RADAR-СУММА-НОМЕР-ПОДПИСЬ · один и тот же код нельзя активировать дважды.</div>
 
     <div class="fair-actions" style="margin-top:16px;">
       <button class="btn-secondary" id="promoCloseBtn">Закрыть</button>
@@ -1244,6 +1241,15 @@ function haptic(type) {
     else if (type === 'error') tg.HapticFeedback.notificationOccurred('error');
     else if (type === 'warning') tg.HapticFeedback.notificationOccurred('warning');
   } catch (e) {}
+}
+
+/* ============================================================
+   SHA-256
+   ============================================================ */
+async function sha256Hex(str) {
+  const enc = new TextEncoder().encode(str);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 /* ============================================================
@@ -1322,9 +1328,9 @@ function giftArtHTML(gift, showNum) {
 /* ============================================================
    ХРАНИЛИЩЕ
    ============================================================ */
-const STORAGE_BALANCE = 'nebula_balance_v3';
-const STORAGE_INVENTORY = 'nebula_inventory_v3';
-const STORAGE_USED_CODES = 'nebula_used_codes_v3';
+const STORAGE_BALANCE = 'nebula_balance_v4';
+const STORAGE_INVENTORY = 'nebula_inventory_v4';
+const STORAGE_USED_CODES = 'nebula_used_codes_v4';
 let balance = 1000;
 let inventory = [];
 let usedCodes = new Set();
@@ -1387,18 +1393,13 @@ function toast(msg) {
 /* ============================================================
    PROVABLY FAIR (SHA-256)
    ============================================================ */
-const FAIR_STORAGE = 'nebula_fair_v3';
+const FAIR_STORAGE = 'nebula_fair_v4';
 const fairness = { clientSeed: 'player-seed', serverSeed: '', serverSeedHash: '', nonce: 0, lastRound: null };
 
 function randomHex(len) {
   const bytes = new Uint8Array(len);
   crypto.getRandomValues(bytes);
   return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-async function sha256Hex(str) {
-  const enc = new TextEncoder().encode(str);
-  const buf = await crypto.subtle.digest('SHA-256', enc);
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 async function initFairness() {
   try {
@@ -1487,7 +1488,7 @@ function pickGiftForPayout(amount) {
   }
   return best;
 }
-function deliverWin(winAmount, sourceGame) {
+function deliverWin(winAmount) {
   if (winAmount >= GIFT_PAYOUT_THRESHOLD) {
     const gift = pickGiftForPayout(winAmount);
     if (gift) {
@@ -1499,11 +1500,10 @@ function deliverWin(winAmount, sourceGame) {
       updateInvCount();
       if (change > 0) addStars(change);
       showGiftWin(gift, change);
-      return { asGift: true, gift, change };
+      return;
     }
   }
   addStars(winAmount);
-  return { asGift: false, stars: winAmount };
 }
 function showGiftWin(gift, change) {
   const modal = document.getElementById('giftWinModal');
@@ -1596,7 +1596,6 @@ function buildMinesGrid() {
     minesState.cells.push(cell);
   }
 }
-
 function calcMinesMult(opened, safeTotal) {
   if (opened === 0) return 1;
   let prob = 1;
@@ -1605,7 +1604,6 @@ function calcMinesMult(opened, safeTotal) {
   if (prob <= 0) return 1;
   return Math.max(1, (1 / prob) * (1 - HOUSE_EDGE));
 }
-
 async function startMines() {
   const bet = getBet('minesBet');
   if (!validateBet(bet)) return;
@@ -1625,7 +1623,6 @@ async function startMines() {
   minesActionBtn.style.display = 'none';
   minesCashoutBtn.style.display = 'block';
 }
-
 function onMineClick(idx) {
   if (!minesState.active) return;
   const cell = minesState.cells[idx];
@@ -1651,7 +1648,7 @@ function onMineClick(idx) {
       minesMultEl.textContent = 'x' + minesState.mult.toFixed(2);
       minesWinEl.textContent = Math.floor(win) + ' ⭐';
       haptic('success');
-      deliverWin(win, 'mines');
+      deliverWin(win);
       recordRound('mines', true, { bet: minesState.bet, mines: minesState.minesCount, win });
       endMines(true);
       return;
@@ -1683,7 +1680,7 @@ function cashoutMines() {
   if (minesState.opened === 0) { toast('Откройте хотя бы одну ячейку'); haptic('warning'); return; }
   const win = minesState.bet * minesState.mult;
   haptic('success');
-  deliverWin(win, 'mines');
+  deliverWin(win);
   recordRound('mines', true, { bet: minesState.bet, mines: minesState.minesCount, win, cashout: true });
   endMines(true);
 }
@@ -1719,7 +1716,6 @@ function ladderTotalMult(levelsPassed, bad) {
   if (levelsPassed <= 0) return 1;
   return Math.pow(ladderLevelMult(bad), levelsPassed);
 }
-
 function buildLadder() {
   ladderWrap.innerHTML = '';
   for (let lvl = 0; lvl < LADDER_LEVELS; lvl++) {
@@ -1756,7 +1752,6 @@ function updateLadderVisual() {
     else if (lvl === ladderState.currentLevel) row.classList.add('current');
   });
 }
-
 async function startLadder() {
   const bet = getBet('ladderBet');
   if (!validateBet(bet)) return;
@@ -1780,7 +1775,6 @@ async function startLadder() {
   ladderCashoutBtn.style.display = 'block';
   updateLadderVisual();
 }
-
 function onLadderClick(level, stone) {
   if (!ladderState.active) return;
   if (level !== ladderState.currentLevel) return;
@@ -1814,7 +1808,7 @@ function onLadderClick(level, stone) {
   if (ladderState.currentLevel >= LADDER_LEVELS) {
     const win = ladderState.bet * totalMult;
     haptic('success');
-    deliverWin(win, 'ladder');
+    deliverWin(win);
     recordRound('ladder', true, { bet: ladderState.bet, level: LADDER_LEVELS - 1, bad: ladderState.badPerLevel, win });
     endLadder(true);
     return;
@@ -1834,7 +1828,7 @@ function cashoutLadder() {
   const mult = ladderTotalMult(ladderState.currentLevel, ladderState.badPerLevel);
   const win = ladderState.bet * mult;
   haptic('success');
-  deliverWin(win, 'ladder');
+  deliverWin(win);
   recordRound('ladder', true, { bet: ladderState.bet, level: ladderState.currentLevel - 1, bad: ladderState.badPerLevel, win, cashout: true });
   endLadder(true);
 }
@@ -1922,7 +1916,6 @@ function updateUpgradeUI() {
   drawWheel(upgradeState.angle);
 }
 function easeOutQuart(t) { return 1 - Math.pow(1 - t, 4); }
-
 async function spinUpgrade() {
   if (upgradeState.spinning) return;
   const bet = getBet('upgradeBet');
@@ -1972,7 +1965,6 @@ async function spinUpgrade() {
   }
   requestAnimationFrame(frame);
 }
-
 function finishUpgrade(isWin) {
   upgradeState.spinning = false;
   upgradeSpinBtn.disabled = false;
@@ -1992,7 +1984,7 @@ function finishUpgrade(isWin) {
       upgradeFlash.textContent = '🏆 Победа! Подарок в инвентаре';
     } else {
       const win = upgradeState.bet * upgradeState.targetMult;
-      deliverWin(win, 'upgrade');
+      deliverWin(win);
       upgradeFlash.textContent = '🏆 Победа! +' + Math.floor(win) + ' ⭐';
     }
     upgradeFlash.style.color = 'var(--green)';
@@ -2006,7 +1998,6 @@ function finishUpgrade(isWin) {
 }
 upgradeSpinBtn.addEventListener('click', spinUpgrade);
 
-/* Upgrade gift picker */
 const giftPickerModal = document.getElementById('giftPickerModal');
 const pickerGrid = document.getElementById('pickerGrid');
 let pickerSelected = null;
@@ -2081,7 +2072,6 @@ document.querySelectorAll('.gift-tab').forEach(tab => {
     }
   });
 });
-
 function renderShop() {
   giftsGrid.innerHTML = '';
   GIFTS.forEach(g => {
@@ -2116,7 +2106,6 @@ function renderShop() {
     });
   });
 }
-
 function renderInventory() {
   invGrid.innerHTML = '';
   if (inventory.length === 0) {
@@ -2163,7 +2152,7 @@ function renderInventory() {
     });
   });
   invGrid.querySelectorAll('[data-withdraw]').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       if (btn.disabled) return;
       const uid = parseFloat(btn.dataset.withdraw);
       const idx = inventory.findIndex(x => x.uid === uid);
@@ -2175,50 +2164,29 @@ function renderInventory() {
         haptic('warning');
         return;
       }
-      // Удаляем из инвентаря
       inventory.splice(idx, 1);
       saveState();
       renderInventory();
       updateInvCount();
       haptic('success');
-      generateWithdrawReceipt(g, inventory[idx] ? inventory[idx].num : Math.floor(Math.random() * 99999));
+      await generateWithdrawReceipt(g);
     });
   });
 }
 
 /* ============================================================
-   ВЫВОД: ЧЕК
+   ВЫВОД: ГЕНЕРАЦИЯ ЧЕКА
+   Формат: Чек на вывод Nebula | Подарок: ${gift.name} (${gift.price} ⭐) | ID: ${checkId} | Подпись: ${sig}
+   где sig = первые 6 символов верхнего регистра SHA-256("RADAR777:WITHDRAW:" + gift.name + ":" + gift.price + ":" + checkId)
    ============================================================ */
-async function generateWithdrawReceipt(gift, num) {
-  const now = new Date();
-  const timeStr = now.toLocaleString('ru-RU', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit', second: '2-digit'
-  });
-  const giftNum = (num !== undefined && num !== null) ? String(num).padStart(5, '0') : String(Math.floor(Math.random() * 99999)).padStart(5, '0');
-  const requestId = 'WD-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(Math.random() * 9999).toString().padStart(4, '0');
+async function generateWithdrawReceipt(gift) {
+  // 6-значный случайный ID
+  const checkId = String(Math.floor(100000 + Math.random() * 900000));
+  const payload = `${SECRET_SALT}:WITHDRAW:${gift.name}:${gift.price}:${checkId}`;
+  const fullHash = await sha256Hex(payload);
+  const sig = fullHash.slice(0, 6).toUpperCase();
 
-  // Формируем тело чека, по которому считаем хеш
-  const payload = `withdraw|${requestId}|${gift.id}|${gift.name}|${gift.price}|${giftNum}|${timeStr}`;
-  const hash = await sha256Hex(`${SECRET_SALT}:${payload}`);
-  const shortHash = hash.slice(0, 20).toUpperCase();
-
-  const receiptText =
-`═══════════════════════════════
-       NEBULA · ЧЕК НА ВЫВОД
-═══════════════════════════════
-Заявка:       ${requestId}
-Подарок:      ${gift.name}
-Номер NFT:    #${giftNum}
-Стоимость:    ${gift.price} ⭐
-Редкость:     ${gift.rarity === 'nft' ? 'Коллекционный NFT' : 'Обычный'}
-Дата:         ${timeStr}
-───────────────────────────────
-Контрольный хеш (SHA-256):
-${shortHash}...
-───────────────────────────────
-Проверка: SHA-256("${SECRET_SALT}:" + payload)
-═══════════════════════════════`;
+  const receiptText = `Чек на вывод Nebula | Подарок: ${gift.name} (${gift.price} ⭐) | ID: ${checkId} | Подпись: ${sig}`;
 
   const preview = document.getElementById('receiptPreview');
   preview.textContent = receiptText;
@@ -2226,7 +2194,6 @@ ${shortHash}...
   const modal = document.getElementById('receiptModal');
   modal.classList.add('show');
 
-  // Сохраняем в data-атрибут кнопки «Копировать»
   const copyBtn = document.getElementById('receiptCopyBtn');
   copyBtn.dataset.text = receiptText;
 }
@@ -2245,7 +2212,6 @@ document.getElementById('receiptCopyBtn').addEventListener('click', async () => 
       toast('Чек скопирован');
       haptic('success');
     } else {
-      // Fallback
       const ta = document.createElement('textarea');
       ta.value = text;
       ta.style.position = 'fixed';
@@ -2264,54 +2230,49 @@ document.getElementById('receiptCopyBtn').addEventListener('click', async () => 
 });
 
 /* ============================================================
-   ПОПОЛНЕНИЕ: ПРОМОКОДЫ
+   ПОПОЛНЕНИЕ: ПРОВЕРКА ПРОМОКОДОВ
+   Формат: RADAR-СУММА-НОМЕР-ПОДПИСЬ
+   ПОДПИСЬ = первые 4 символа upper(SHA-256("RADAR777:" + СУММА + ":" + НОМЕР))
+   СУММА >= 500, НОМЕР — произвольная строка (например, номер чека)
    ============================================================ */
 const promoModal = document.getElementById('promoModal');
 const promoInput = document.getElementById('promoInput');
 const promoActivateBtn = document.getElementById('promoActivateBtn');
 const promoCloseBtn = document.getElementById('promoCloseBtn');
 
-// Тестовые готовые коды
-const STATIC_PROMOCODES = {
-  'START500': 500,
-  'VIP1000': 1000,
-  'MEGA2500': 2500
-};
+async function verifyPromoCode(rawCode) {
+  const code = (rawCode || '').trim().toUpperCase();
+  if (!code) return { ok: false, reason: 'Введите код' };
 
-// Генератор кодов в формате RADAR-<сумма>-<4 hex>
-// Код действителен, если совпадает с SHA-256(SECRET_SALT:сумма:номер_чека) первые 4 символа
-// Пример: сумма=500, номер_чека=001 → hash = sha256("RADAR777:500:001"), код = "RADAR-500-" + hash[0:4].toUpperCase()
-// При ручной проверке кода мы не знаем номер чека, поэтому перебираем 000..999.
-async function findPromoAmount(code) {
-  const upper = code.toUpperCase().trim();
+  // Формат: RADAR-<СУММА>-<НОМЕР>-<ПОДПИСЬ>
+  // НОМЕР и ПОДПИСЬ не содержат дефисов (предполагаем, что дефисы — только разделители)
+  // Но чтобы поддержать номера с дефисами, разберём от конца:
+  const parts = code.split('-');
+  if (parts.length < 4) return { ok: false, reason: 'Неверный формат кода' };
+  if (parts[0] !== 'RADAR') return { ok: false, reason: 'Неверный формат кода' };
 
-  // 1) Статичные тестовые коды
-  if (STATIC_PROMOCODES[upper] !== undefined) {
-    return STATIC_PROMOCODES[upper];
+  const sig = parts[parts.length - 1];              // последний сегмент
+  const amountStr = parts[1];                       // второй сегмент — сумма
+  const num = parts.slice(2, parts.length - 1).join('-'); // всё между — НОМЕР
+
+  if (!/^[A-F0-9]{4}$/.test(sig)) return { ok: false, reason: 'Неверная подпись' };
+  if (!/^\d+$/.test(amountStr)) return { ok: false, reason: 'Неверная сумма' };
+  if (!num) return { ok: false, reason: 'Отсутствует номер' };
+
+  const amount = parseInt(amountStr, 10);
+  if (!amount || amount < MIN_TOPUP) {
+    return { ok: false, reason: `Сумма должна быть не меньше ${MIN_TOPUP} ⭐` };
   }
 
-  // 2) Динамические RADAR-<сумма>-<4hex>
-  const m = upper.match(/^RADAR-(\d+)-([A-F0-9]{4})$/);
-  if (!m) return null;
-  const amount = parseInt(m[1], 10);
-  const suffix = m[2];
-  if (!amount || amount < MIN_TOPUP) return null;
+  const payload = `${SECRET_SALT}:${amount}:${num}`;
+  const fullHash = await sha256Hex(payload);
+  const expectedSig = fullHash.slice(0, 4).toUpperCase();
 
-  // Перебираем номера чеков 000..999 и проверяем хеш
-  for (let n = 0; n <= 999; n++) {
-    const numStr = String(n).padStart(3, '0');
-    const hash = await sha256Hex(`${SECRET_SALT}:${amount}:${numStr}`);
-    if (hash.slice(0, 4).toUpperCase() === suffix) {
-      return amount;
-    }
+  if (expectedSig !== sig) {
+    return { ok: false, reason: 'Неверная подпись кода' };
   }
-  return null;
-}
 
-function openPromoModal() {
-  promoInput.value = '';
-  promoModal.classList.add('show');
-  setTimeout(() => { try { promoInput.focus(); } catch (e) {} }, 250);
+  return { ok: true, amount, normalized: code };
 }
 
 async function activatePromoCode() {
@@ -2328,29 +2289,37 @@ async function activatePromoCode() {
   promoActivateBtn.disabled = true;
   promoActivateBtn.textContent = 'Проверка...';
 
-  const amount = await findPromoAmount(upper);
+  const res = await verifyPromoCode(upper);
 
   promoActivateBtn.disabled = false;
   promoActivateBtn.textContent = 'Активировать';
 
-  if (!amount) {
-    toast('Неверный или просроченный код');
+  if (!res.ok) {
+    toast(res.reason || 'Неверный код');
     haptic('error');
     return;
   }
 
-  // Успех
-  usedCodes.add(upper);
-  addStars(amount);
+  // Проверяем на дубль с нормализованной формой
+  if (usedCodes.has(res.normalized)) {
+    toast('Этот код уже был активирован');
+    haptic('error');
+    return;
+  }
+
+  usedCodes.add(res.normalized);
+  addStars(res.amount);
   saveState();
   haptic('success');
-  toast(`✅ Активировано: +${amount} ⭐`);
+  toast(`✅ Активировано: +${res.amount} ⭐`);
   promoModal.classList.remove('show');
 }
 
 document.getElementById('btnTopup').addEventListener('click', () => {
   haptic('medium');
-  openPromoModal();
+  promoInput.value = '';
+  promoModal.classList.add('show');
+  setTimeout(() => { try { promoInput.focus(); } catch (e) {} }, 250);
 });
 promoActivateBtn.addEventListener('click', activatePromoCode);
 promoInput.addEventListener('keydown', (e) => {
@@ -2395,4 +2364,4 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 else init();
 </script>
 </body>
-        </html>
+  </html>
