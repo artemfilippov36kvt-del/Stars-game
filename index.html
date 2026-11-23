@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<script src="https://telegram.org"></script>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0F1115">
@@ -692,6 +690,26 @@
   .gift-buy-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   .gift-buy-btn.nft { background: linear-gradient(135deg, #A855F7, #7C3AED); color: #fff; }
 
+  .gift-withdraw-btn {
+    margin: 4px 10px 10px;
+    padding: 8px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: var(--bg-elev-2);
+    color: var(--text);
+    font-weight: 800;
+    font-size: 11.5px;
+    cursor: pointer;
+    transition: all 0.15s var(--ease);
+  }
+  .gift-withdraw-btn:active { transform: scale(0.96); }
+  .gift-withdraw-btn.locked {
+    color: var(--text-mute);
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+  .gift-withdraw-btn.locked:active { transform: none; }
+
   .inv-empty {
     text-align: center;
     padding: 40px 20px;
@@ -794,6 +812,69 @@
     width: 100%;
   }
   .picker-item-price { font-size: 9.5px; color: var(--gold); font-weight: 800; }
+
+  /* ===== PROMO MODAL ===== */
+  .promo-instruction {
+    padding: 12px;
+    background: rgba(95, 179, 255, 0.06);
+    border: 1px solid rgba(95, 179, 255, 0.2);
+    border-radius: 10px;
+    font-size: 12.5px;
+    color: var(--text);
+    line-height: 1.55;
+    margin-bottom: 14px;
+  }
+  .promo-instruction b { color: var(--cyan); }
+
+  .promo-row { display: flex; gap: 8px; }
+  .promo-row input {
+    flex: 1;
+    min-width: 0;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    outline: none;
+    transition: border 0.15s var(--ease);
+  }
+  .promo-row input:focus { border-color: rgba(0, 231, 1, 0.4); }
+  .promo-row input::placeholder { text-transform: none; letter-spacing: 0; font-family: -apple-system, sans-serif; font-weight: 500; color: var(--text-mute); }
+
+  .promo-hint {
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--text-mute);
+    line-height: 1.5;
+    text-align: center;
+  }
+
+  /* ===== RECEIPT MODAL ===== */
+  .receipt-preview {
+    padding: 16px;
+    background: var(--bg);
+    border: 1px dashed var(--border-strong);
+    border-radius: 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.65;
+    margin-bottom: 14px;
+    user-select: text;
+    -webkit-user-select: text;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .receipt-preview .receipt-key { color: var(--text-mute); }
+  .receipt-preview .receipt-val { color: var(--text); font-weight: 700; }
+  .receipt-preview .receipt-hash { color: var(--cyan); word-break: break-all; }
 
   ::-webkit-scrollbar { width: 0; height: 0; }
 
@@ -1022,7 +1103,7 @@
         SHA-256
       </span>
     </div>
-    <div class="sheet-sub">Каждый раунд проверяем криптографическим хешем. House Edge: <b style="color:var(--gold)">4%</b>. Сервер не может подделать результат — вы можете проверить его самостоятельно.</div>
+    <div class="sheet-sub">Каждый раунд проверяем криптографическим хешем. House Edge: <b style="color:var(--gold)">4%</b>. Сервер не может подделать результат.</div>
     <div class="fair-field">
       <div class="fair-field-label">Server Seed Hash</div>
       <div class="fair-field-value" id="fairServerHash">—</div>
@@ -1085,12 +1166,65 @@
   </div>
 </div>
 
+<!-- PROMO / TOPUP MODAL -->
+<div class="modal-overlay" id="promoModal">
+  <div class="modal-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/>
+      </svg>
+      Пополнение баланса
+    </div>
+    <div class="sheet-sub">Активируйте одноразовый код, чтобы получить звёзды на баланс.</div>
+
+    <div class="promo-instruction">
+      💬 Для пополнения от <b>500 ⭐</b> напишите администратору в ЛС, чтобы получить одноразовый код активации.
+    </div>
+
+    <div class="promo-row">
+      <input type="text" id="promoInput" placeholder="Введите код (например, START500)" autocomplete="off" spellcheck="false">
+      <button class="btn-main" style="width:auto;padding:0 18px;white-space:nowrap;" id="promoActivateBtn">Активировать</button>
+    </div>
+    <div class="promo-hint">Один и тот же код нельзя активировать дважды.</div>
+
+    <div class="fair-actions" style="margin-top:16px;">
+      <button class="btn-secondary" id="promoCloseBtn">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECEIPT MODAL -->
+<div class="modal-overlay" id="receiptModal">
+  <div class="modal-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+        <path d="M14 2v6h6M9 13h6M9 17h6"/>
+      </svg>
+      Чек на вывод сформирован!
+    </div>
+    <div class="sheet-sub">Отправьте этот чек администратору в ЛС, чтобы получить подарок.</div>
+
+    <div class="receipt-preview" id="receiptPreview">—</div>
+
+    <div class="fair-actions">
+      <button class="btn-secondary" id="receiptCloseBtn">Закрыть</button>
+      <button class="btn-main" style="flex:1;" id="receiptCopyBtn">Скопировать чек</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ============================================================
    КОНСТАНТЫ
    ============================================================ */
 const HOUSE_EDGE = 0.04;
 const GIFT_PAYOUT_THRESHOLD = 1000;
+const SECRET_SALT = "RADAR777";
+const MIN_TOPUP = 500;
+const MIN_WITHDRAW = 1100;
 
 const tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
 if (tg) {
@@ -1113,15 +1247,9 @@ function haptic(type) {
 }
 
 /* ============================================================
-   БАЗА ПОДАРКОВ (23 штуки)
+   БАЗА ПОДАРКОВ (23 шт.)
    ============================================================ */
-// helper: градиентный фон
-function grad(id, c1, c2, angle) {
-  return { id, c1, c2, angle: angle || 135 };
-}
-
 const GIFTS = [
-  // Обычные
   { id: 'bear',     name: 'Мишка',            price: 15,    rarity: 'common', colors: ['#F4B57A', '#B77642'], icon: 'bear' },
   { id: 'heart',    name: 'Сердце с бантом',  price: 15,    rarity: 'common', colors: ['#FF7AA0', '#C0255B'], icon: 'heart' },
   { id: 'rose',     name: 'Роза',             price: 25,    rarity: 'common', colors: ['#FF5C8A', '#7A0F32'], icon: 'rose' },
@@ -1133,7 +1261,6 @@ const GIFTS = [
   { id: 'cup',      name: 'Кубок',            price: 100,   rarity: 'common', colors: ['#FFD75E', '#8A6A00'], icon: 'cup' },
   { id: 'ring',     name: 'Кольцо',           price: 100,   rarity: 'common', colors: ['#D9E4FF', '#5A6FA8'], icon: 'ring' },
   { id: 'diamond',  name: 'Алмаз',            price: 100,   rarity: 'common', colors: ['#B8F0FF', '#2A6F8A'], icon: 'diamond' },
-  // NFT
   { id: 'clover',   name: 'Clover Pin',       price: 250,   rarity: 'nft', colors: ['#7AFFB0', '#0F6F3A'], icon: 'clover' },
   { id: 'crystal',  name: 'Crystal Ball',     price: 400,   rarity: 'nft', colors: ['#C9A8FF', '#4A1F8A'], icon: 'crystal' },
   { id: 'pumpkin',  name: 'Mad Pumpkin',      price: 600,   rarity: 'nft', colors: ['#FF9F4D', '#8A2A0F'], icon: 'pumpkin' },
@@ -1148,136 +1275,33 @@ const GIFTS = [
   { id: 'pepe',     name: 'Plush Pepe',       price: 75000, rarity: 'nft', colors: ['#7AFF8A', '#0F7A1F'], icon: 'pepe' }
 ];
 
-// SVG генераторы иконок
-function svgIcon(type, color1, color2) {
+function svgIcon(type) {
   const stroke = 'rgba(255,255,255,0.85)';
   const fill = 'rgba(255,255,255,0.15)';
   const icons = {
-    bear: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="16" cy="16" r="6" fill="${fill}"/><circle cx="48" cy="16" r="6" fill="${fill}"/>
-      <circle cx="32" cy="34" r="18" fill="${fill}"/>
-      <circle cx="26" cy="30" r="2" fill="${stroke}"/><circle cx="38" cy="30" r="2" fill="${stroke}"/>
-      <ellipse cx="32" cy="40" rx="6" ry="4" fill="${stroke}" opacity="0.7"/>
-    </svg>`,
-    heart: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M32 54s-20-12-20-26a10 10 0 0120-4 10 10 0 0120 4c0 14-20 26-20 26z" fill="${fill}"/>
-      <path d="M22 20l8-6M42 20l-8-6"/>
-    </svg>`,
-    rose: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="32" cy="20" r="10" fill="${fill}"/>
-      <path d="M32 30v20M22 34l-4 8M42 34l4 8" />
-      <path d="M26 40c-4 0-6 4-6 8M38 40c4 0 6 4 6 8" opacity="0.6"/>
-    </svg>`,
-    box: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="10" y="26" width="44" height="28" rx="2" fill="${fill}"/>
-      <rect x="8" y="18" width="48" height="10" rx="2" fill="${fill}"/>
-      <path d="M32 18v36M32 18c-4-8-12-8-12-2s8 6 12 2M32 18c4-8 12-8 12-2s-8 6-12 2"/>
-    </svg>`,
-    cake: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="10" y="30" width="44" height="24" rx="2" fill="${fill}"/>
-      <path d="M10 30c0-4 4-6 8-6s8 2 8 6M26 30c0-4 4-6 8-6s8 2 8 6M42 30c0-4 4-6 8-6"/>
-      <path d="M22 20v-6M32 20v-8M42 20v-6" stroke="${stroke}" stroke-width="2"/>
-      <circle cx="22" cy="14" r="1.5" fill="${stroke}"/>
-      <circle cx="32" cy="12" r="1.5" fill="${stroke}"/>
-      <circle cx="42" cy="14" r="1.5" fill="${stroke}"/>
-    </svg>`,
-    bouquet: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="22" cy="22" r="6" fill="${fill}"/><circle cx="32" cy="16" r="6" fill="${fill}"/><circle cx="42" cy="22" r="6" fill="${fill}"/>
-      <path d="M22 28l-4 22M32 22v28M42 28l4 22"/>
-      <path d="M18 40l8 2M46 40l-8 2" opacity="0.6"/>
-    </svg>`,
-    rocket: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M32 8c-6 6-10 16-10 24l10 6 10-6c0-8-4-18-10-24z" fill="${fill}"/>
-      <path d="M22 32l-8 8 8 4M42 32l8 8-8 4"/>
-      <circle cx="32" cy="24" r="3" fill="${stroke}"/>
-      <path d="M28 44v10l4-4 4 4V44" opacity="0.7"/>
-    </svg>`,
-    champagne: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M26 8h12v10c0 4-4 6-6 6s-6-2-6-6V8z" fill="${fill}"/>
-      <path d="M32 24v24M24 54h16"/>
-      <circle cx="50" cy="16" r="2" fill="${stroke}"/><circle cx="46" cy="24" r="1.5" fill="${stroke}"/><circle cx="54" cy="24" r="1.5" fill="${stroke}"/>
-    </svg>`,
-    cup: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M18 14h28v18c0 8-6 14-14 14s-14-6-14-14V14z" fill="${fill}"/>
-      <path d="M46 18h6a6 6 0 010 12h-6" opacity="0.7"/>
-      <path d="M26 52h12M32 46v6"/>
-    </svg>`,
-    ring: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="32" cy="38" r="14" fill="${fill}"/>
-      <path d="M20 24l6-10h12l6 10" fill="${fill}"/>
-      <circle cx="32" cy="16" r="3" fill="${stroke}"/>
-    </svg>`,
-    diamond: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 26L22 10h20l10 16-20 28z" fill="${fill}"/>
-      <path d="M12 26h40M22 10l10 44M42 10L32 54M32 10v44"/>
-    </svg>`,
-    clover: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="24" cy="24" r="8" fill="${fill}"/><circle cx="40" cy="24" r="8" fill="${fill}"/>
-      <circle cx="24" cy="40" r="8" fill="${fill}"/><circle cx="40" cy="40" r="8" fill="${fill}"/>
-      <path d="M32 32v22"/>
-    </svg>`,
-    crystal: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="32" cy="34" r="16" fill="${fill}"/>
-      <ellipse cx="32" cy="34" rx="16" ry="6" opacity="0.6"/>
-      <path d="M14 50h36l-4 6H18z"/>
-    </svg>`,
-    pumpkin: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <ellipse cx="32" cy="36" rx="20" ry="16" fill="${fill}"/>
-      <path d="M32 20v32M20 24c-2 8-2 16 0 24M44 24c2 8 2 16 0 24" opacity="0.5"/>
-      <path d="M24 32l4 4M40 32l-4 4M28 44h8"/>
-      <path d="M32 20v-6M28 14h8" stroke="${stroke}"/>
-    </svg>`,
-    snoop: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="32" cy="30" r="14" fill="${fill}"/>
-      <path d="M18 30c-4 0-6 4-4 10M46 30c4 0 6 4 4 10" />
-      <circle cx="26" cy="28" r="2" fill="${stroke}"/><circle cx="38" cy="28" r="2" fill="${stroke}"/>
-      <path d="M26 40c2-2 6-2 6 0s4 2 6 0" opacity="0.7"/>
-      <path d="M14 18h36" opacity="0.4"/>
-    </svg>`,
-    voodoo: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="32" cy="18" r="8" fill="${fill}"/>
-      <path d="M32 26v20M22 34h20M26 54l6-8 6 8"/>
-      <circle cx="29" cy="17" r="1.5" fill="${stroke}"/><circle cx="35" cy="17" r="1.5" fill="${stroke}"/>
-      <path d="M30 22h4" stroke="${stroke}"/>
-    </svg>`,
-    cat: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M18 22l4-12 8 8h4l8-8 4 12" fill="${fill}"/>
-      <circle cx="32" cy="34" r="16" fill="${fill}"/>
-      <circle cx="26" cy="32" r="3" fill="${stroke}"/><circle cx="38" cy="32" r="3" fill="${stroke}"/>
-      <path d="M32 38v4M28 44h8" />
-      <path d="M20 32l-8 2M44 32l8 2" opacity="0.6"/>
-    </svg>`,
-    tophat: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="20" y="10" width="24" height="30" fill="${fill}"/>
-      <path d="M10 42h44M14 42c0-2 6-4 18-4s18 2 18 4v4H14v-4z" fill="${fill}"/>
-      <path d="M20 22h24" opacity="0.5"/>
-    </svg>`,
-    watch: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="22" y="18" width="20" height="28" rx="4" fill="${fill}"/>
-      <circle cx="32" cy="32" r="8" fill="rgba(255,255,255,0.1)"/>
-      <path d="M32 28v4l3 2"/>
-      <path d="M26 18V8h12v10M26 46v10h12V46"/>
-    </svg>`,
-    oscar: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="32" cy="18" r="8" fill="${fill}"/>
-      <path d="M24 26l4 16h8l4-16M20 54h24M24 54l4-12M40 54l-4-12"/>
-    </svg>`,
-    astral: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M32 8l6 14 16 2-12 12 4 16-14-8-14 8 4-16L10 24l16-2z" fill="${fill}"/>
-      <circle cx="32" cy="30" r="4" fill="${stroke}" opacity="0.7"/>
-    </svg>`,
-    cap: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M14 40c0-12 8-22 18-22s18 10 18 22" fill="${fill}"/>
-      <path d="M14 40h36v4H14z" fill="${fill}"/>
-      <path d="M50 40c4 0 6 4 4 8l-6-2" fill="${fill}"/>
-      <circle cx="32" cy="30" r="2" fill="${stroke}"/>
-    </svg>`,
-    pepe: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <ellipse cx="32" cy="30" rx="18" ry="16" fill="${fill}"/>
-      <circle cx="24" cy="26" r="4" fill="${stroke}"/><circle cx="40" cy="26" r="4" fill="${stroke}"/>
-      <path d="M20 38c4 4 8 6 12 6s8-2 12-6" fill="${fill}"/>
-      <path d="M14 20c0-4 4-6 8-4M50 20c0-4-4-6-8-4"/>
-    </svg>`
+    bear: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="16" r="6" fill="${fill}"/><circle cx="48" cy="16" r="6" fill="${fill}"/><circle cx="32" cy="34" r="18" fill="${fill}"/><circle cx="26" cy="30" r="2" fill="${stroke}"/><circle cx="38" cy="30" r="2" fill="${stroke}"/><ellipse cx="32" cy="40" rx="6" ry="4" fill="${stroke}" opacity="0.7"/></svg>`,
+    heart: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M32 54s-20-12-20-26a10 10 0 0120-4 10 10 0 0120 4c0 14-20 26-20 26z" fill="${fill}"/><path d="M22 20l8-6M42 20l-8-6"/></svg>`,
+    rose: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="20" r="10" fill="${fill}"/><path d="M32 30v20M22 34l-4 8M42 34l4 8"/><path d="M26 40c-4 0-6 4-6 8M38 40c4 0 6 4 6 8" opacity="0.6"/></svg>`,
+    box: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="10" y="26" width="44" height="28" rx="2" fill="${fill}"/><rect x="8" y="18" width="48" height="10" rx="2" fill="${fill}"/><path d="M32 18v36M32 18c-4-8-12-8-12-2s8 6 12 2M32 18c4-8 12-8 12-2s-8 6-12 2"/></svg>`,
+    cake: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="10" y="30" width="44" height="24" rx="2" fill="${fill}"/><path d="M10 30c0-4 4-6 8-6s8 2 8 6M26 30c0-4 4-6 8-6s8 2 8 6M42 30c0-4 4-6 8-6"/><path d="M22 20v-6M32 20v-8M42 20v-6"/><circle cx="22" cy="14" r="1.5" fill="${stroke}"/><circle cx="32" cy="12" r="1.5" fill="${stroke}"/><circle cx="42" cy="14" r="1.5" fill="${stroke}"/></svg>`,
+    bouquet: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="22" cy="22" r="6" fill="${fill}"/><circle cx="32" cy="16" r="6" fill="${fill}"/><circle cx="42" cy="22" r="6" fill="${fill}"/><path d="M22 28l-4 22M32 22v28M42 28l4 22"/><path d="M18 40l8 2M46 40l-8 2" opacity="0.6"/></svg>`,
+    rocket: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M32 8c-6 6-10 16-10 24l10 6 10-6c0-8-4-18-10-24z" fill="${fill}"/><path d="M22 32l-8 8 8 4M42 32l8 8-8 4"/><circle cx="32" cy="24" r="3" fill="${stroke}"/><path d="M28 44v10l4-4 4 4V44" opacity="0.7"/></svg>`,
+    champagne: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M26 8h12v10c0 4-4 6-6 6s-6-2-6-6V8z" fill="${fill}"/><path d="M32 24v24M24 54h16"/><circle cx="50" cy="16" r="2" fill="${stroke}"/><circle cx="46" cy="24" r="1.5" fill="${stroke}"/><circle cx="54" cy="24" r="1.5" fill="${stroke}"/></svg>`,
+    cup: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 14h28v18c0 8-6 14-14 14s-14-6-14-14V14z" fill="${fill}"/><path d="M46 18h6a6 6 0 010 12h-6" opacity="0.7"/><path d="M26 52h12M32 46v6"/></svg>`,
+    ring: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="38" r="14" fill="${fill}"/><path d="M20 24l6-10h12l6 10" fill="${fill}"/><circle cx="32" cy="16" r="3" fill="${stroke}"/></svg>`,
+    diamond: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 26L22 10h20l10 16-20 28z" fill="${fill}"/><path d="M12 26h40M22 10l10 44M42 10L32 54M32 10v44"/></svg>`,
+    clover: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="8" fill="${fill}"/><circle cx="40" cy="24" r="8" fill="${fill}"/><circle cx="24" cy="40" r="8" fill="${fill}"/><circle cx="40" cy="40" r="8" fill="${fill}"/><path d="M32 32v22"/></svg>`,
+    crystal: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="34" r="16" fill="${fill}"/><ellipse cx="32" cy="34" rx="16" ry="6" opacity="0.6"/><path d="M14 50h36l-4 6H18z"/></svg>`,
+    pumpkin: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="32" cy="36" rx="20" ry="16" fill="${fill}"/><path d="M32 20v32M20 24c-2 8-2 16 0 24M44 24c2 8 2 16 0 24" opacity="0.5"/><path d="M24 32l4 4M40 32l-4 4M28 44h8"/><path d="M32 20v-6M28 14h8"/></svg>`,
+    snoop: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="30" r="14" fill="${fill}"/><path d="M18 30c-4 0-6 4-4 10M46 30c4 0 6 4 4 10"/><circle cx="26" cy="28" r="2" fill="${stroke}"/><circle cx="38" cy="28" r="2" fill="${stroke}"/><path d="M26 40c2-2 6-2 6 0s4 2 6 0" opacity="0.7"/><path d="M14 18h36" opacity="0.4"/></svg>`,
+    voodoo: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="18" r="8" fill="${fill}"/><path d="M32 26v20M22 34h20M26 54l6-8 6 8"/><circle cx="29" cy="17" r="1.5" fill="${stroke}"/><circle cx="35" cy="17" r="1.5" fill="${stroke}"/><path d="M30 22h4"/></svg>`,
+    cat: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 22l4-12 8 8h4l8-8 4 12" fill="${fill}"/><circle cx="32" cy="34" r="16" fill="${fill}"/><circle cx="26" cy="32" r="3" fill="${stroke}"/><circle cx="38" cy="32" r="3" fill="${stroke}"/><path d="M32 38v4M28 44h8"/><path d="M20 32l-8 2M44 32l8 2" opacity="0.6"/></svg>`,
+    tophat: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="20" y="10" width="24" height="30" fill="${fill}"/><path d="M10 42h44M14 42c0-2 6-4 18-4s18 2 18 4v4H14v-4z" fill="${fill}"/><path d="M20 22h24" opacity="0.5"/></svg>`,
+    watch: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="22" y="18" width="20" height="28" rx="4" fill="${fill}"/><circle cx="32" cy="32" r="8" fill="rgba(255,255,255,0.1)"/><path d="M32 28v4l3 2"/><path d="M26 18V8h12v10M26 46v10h12V46"/></svg>`,
+    oscar: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="18" r="8" fill="${fill}"/><path d="M24 26l4 16h8l4-16M20 54h24M24 54l4-12M40 54l-4-12"/></svg>`,
+    astral: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M32 8l6 14 16 2-12 12 4 16-14-8-14 8 4-16L10 24l16-2z" fill="${fill}"/><circle cx="32" cy="30" r="4" fill="${stroke}" opacity="0.7"/></svg>`,
+    cap: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 40c0-12 8-22 18-22s18 10 18 22" fill="${fill}"/><path d="M14 40h36v4H14z" fill="${fill}"/><path d="M50 40c4 0 6 4 4 8l-6-2" fill="${fill}"/><circle cx="32" cy="30" r="2" fill="${stroke}"/></svg>`,
+    pepe: `<svg viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="32" cy="30" rx="18" ry="16" fill="${fill}"/><circle cx="24" cy="26" r="4" fill="${stroke}"/><circle cx="40" cy="26" r="4" fill="${stroke}"/><path d="M20 38c4 4 8 6 12 6s8-2 12-6" fill="${fill}"/><path d="M14 20c0-4 4-6 8-4M50 20c0-4-4-6-8-4"/></svg>`
   };
   return icons[type] || icons.bear;
 }
@@ -1296,12 +1320,14 @@ function giftArtHTML(gift, showNum) {
 }
 
 /* ============================================================
-   BALANCE & INVENTORY
+   ХРАНИЛИЩЕ
    ============================================================ */
-const STORAGE_BALANCE = 'nebula_balance_v2';
-const STORAGE_INVENTORY = 'nebula_inventory_v2';
+const STORAGE_BALANCE = 'nebula_balance_v3';
+const STORAGE_INVENTORY = 'nebula_inventory_v3';
+const STORAGE_USED_CODES = 'nebula_used_codes_v3';
 let balance = 1000;
-let inventory = []; // { giftId, uid, num }
+let inventory = [];
+let usedCodes = new Set();
 
 function loadState() {
   try {
@@ -1315,6 +1341,13 @@ function loadState() {
     const raw = localStorage.getItem(STORAGE_INVENTORY);
     if (raw) inventory = JSON.parse(raw) || [];
   } catch (e) { inventory = []; }
+  try {
+    const raw = localStorage.getItem(STORAGE_USED_CODES);
+    if (raw) {
+      const arr = JSON.parse(raw) || [];
+      usedCodes = new Set(arr);
+    }
+  } catch (e) { usedCodes = new Set(); }
   renderBalance();
   renderInventory();
   updateInvCount();
@@ -1322,6 +1355,7 @@ function loadState() {
 function saveState() {
   try { localStorage.setItem(STORAGE_BALANCE, String(Math.round(balance))); } catch (e) {}
   try { localStorage.setItem(STORAGE_INVENTORY, JSON.stringify(inventory)); } catch (e) {}
+  try { localStorage.setItem(STORAGE_USED_CODES, JSON.stringify(Array.from(usedCodes))); } catch (e) {}
 }
 function renderBalance() {
   const el = document.getElementById('balanceDisplay');
@@ -1333,7 +1367,6 @@ function setBalance(v) {
   renderBalance();
 }
 function addStars(v) { setBalance(balance + v); }
-
 function updateInvCount() {
   const el = document.getElementById('invCount');
   if (el) el.textContent = '(' + inventory.length + ')';
@@ -1352,9 +1385,9 @@ function toast(msg) {
 }
 
 /* ============================================================
-   PROVABLY FAIR
+   PROVABLY FAIR (SHA-256)
    ============================================================ */
-const FAIR_STORAGE = 'nebula_fair_v2';
+const FAIR_STORAGE = 'nebula_fair_v3';
 const fairness = { clientSeed: 'player-seed', serverSeed: '', serverSeedHash: '', nonce: 0, lastRound: null };
 
 function randomHex(len) {
@@ -1445,24 +1478,20 @@ async function recordRound(game, win, extra) {
 }
 
 /* ============================================================
-   GIFT PAYOUT
+   GIFT PAYOUT (авто-подарок при крупном выигрыше)
    ============================================================ */
 function pickGiftForPayout(amount) {
-  // Ищем самый дорогой подарок <= amount
   let best = null;
   for (const g of GIFTS) {
     if (g.price <= amount && (!best || g.price > best.price)) best = g;
   }
   return best;
 }
-
 function deliverWin(winAmount, sourceGame) {
-  // Если >= порога — выдаём подарком
   if (winAmount >= GIFT_PAYOUT_THRESHOLD) {
     const gift = pickGiftForPayout(winAmount);
     if (gift) {
       const change = winAmount - gift.price;
-      // Добавляем в инвентарь
       const num = Math.floor(Math.random() * 99999).toString().padStart(5, '0');
       inventory.push({ giftId: gift.id, uid: Date.now() + Math.random(), num });
       saveState();
@@ -1473,11 +1502,9 @@ function deliverWin(winAmount, sourceGame) {
       return { asGift: true, gift, change };
     }
   }
-  // Иначе — звёздами
   addStars(winAmount);
   return { asGift: false, stars: winAmount };
 }
-
 function showGiftWin(gift, change) {
   const modal = document.getElementById('giftWinModal');
   const art = document.getElementById('giftWinArt');
@@ -1489,8 +1516,8 @@ function showGiftWin(gift, change) {
   nm.textContent = gift.name;
   pr.textContent = `${gift.price} ⭐ · ${gift.rarity === 'nft' ? 'Коллекционный NFT' : 'Обычный подарок'}`;
   sub.textContent = change > 0
-    ? `Подарок выдан из-за крупного выигрыша. Сдача ${change} ⭐ зачислена на баланс.`
-    : 'Подарок выдан из-за крупного выигрыша.';
+    ? `Подарок выдан за крупный выигрыш. Сдача ${change} ⭐ зачислена на баланс.`
+    : 'Подарок выдан за крупный выигрыш.';
   modal.classList.add('show');
 }
 document.getElementById('giftWinClose').addEventListener('click', () => {
@@ -1570,8 +1597,7 @@ function buildMinesGrid() {
   }
 }
 
-// Формула: mult = (1 / prob) * (1 - HOUSE_EDGE)
-function calcMinesMult(opened, safeTotal, minesTotal) {
+function calcMinesMult(opened, safeTotal) {
   if (opened === 0) return 1;
   let prob = 1;
   const total = 25;
@@ -1620,7 +1646,7 @@ function onMineClick(idx) {
     cell.innerHTML = ICON_GEM;
     minesState.opened++;
     if (minesState.opened >= minesState.safeTotal) {
-      minesState.mult = calcMinesMult(minesState.opened, minesState.safeTotal, minesState.minesCount);
+      minesState.mult = calcMinesMult(minesState.opened, minesState.safeTotal);
       const win = minesState.bet * minesState.mult;
       minesMultEl.textContent = 'x' + minesState.mult.toFixed(2);
       minesWinEl.textContent = Math.floor(win) + ' ⭐';
@@ -1630,7 +1656,7 @@ function onMineClick(idx) {
       endMines(true);
       return;
     }
-    minesState.mult = calcMinesMult(minesState.opened, minesState.safeTotal, minesState.minesCount);
+    minesState.mult = calcMinesMult(minesState.opened, minesState.safeTotal);
     minesMultEl.textContent = 'x' + minesState.mult.toFixed(2);
     minesWinEl.textContent = Math.floor(minesState.bet * minesState.mult) + ' ⭐';
   }
@@ -1685,12 +1711,10 @@ const ladderLevelEl = document.getElementById('ladderLevel');
 const ladderActionBtn = document.getElementById('ladderActionBtn');
 const ladderCashoutBtn = document.getElementById('ladderCashoutBtn');
 
-// Множитель одного уровня = (1 / p_успеха) * (1 - HOUSE_EDGE), где p = (5 - bad) / 5
 function ladderLevelMult(bad) {
   const p = (LADDER_CELLS - bad) / LADDER_CELLS;
   return (1 / p) * (1 - HOUSE_EDGE);
 }
-// Итоговый множитель за N уровней
 function ladderTotalMult(levelsPassed, bad) {
   if (levelsPassed <= 0) return 1;
   return Math.pow(ladderLevelMult(bad), levelsPassed);
@@ -1743,7 +1767,6 @@ async function startLadder() {
   ladderState.currentLevel = 0;
   ladderState.bombs = [];
   ladderState.revealed = [];
-  // для каждого уровня выбираем позиции плохих камней
   for (let lvl = 0; lvl < LADDER_LEVELS; lvl++) {
     const order = await fairShuffle('ladder_' + lvl, LADDER_CELLS);
     const bombs = order.slice(0, ladderState.badPerLevel);
@@ -1764,13 +1787,11 @@ function onLadderClick(level, stone) {
   if (ladderState.revealed[level][stone]) return;
   const stoneEl = ladderWrap.querySelector(`.ladder-stone[data-level="${level}"][data-stone="${stone}"]`);
   if (!stoneEl) return;
-
   if (ladderState.bombs[level].has(stone)) {
     haptic('error');
     ladderState.revealed[level][stone] = true;
     stoneEl.classList.add('revealed', 'bomb');
     stoneEl.innerHTML = ICON_BOMB;
-    // раскрываем все безопасные на этом уровне
     for (let s = 0; s < LADDER_CELLS; s++) {
       if (ladderState.bombs[level].has(s)) continue;
       const other = ladderWrap.querySelector(`.ladder-stone[data-level="${level}"][data-stone="${s}"]`);
@@ -1782,17 +1803,14 @@ function onLadderClick(level, stone) {
     toast('💥 Плохой камень! Ставка сгорела');
     return;
   }
-
   haptic('medium');
   ladderState.revealed[level][stone] = true;
   stoneEl.classList.add('revealed', 'safe');
   stoneEl.innerHTML = ICON_GEM;
   ladderState.currentLevel++;
-
   const totalMult = ladderTotalMult(ladderState.currentLevel, ladderState.badPerLevel);
   ladderMultEl.textContent = 'x' + totalMult.toFixed(2);
   ladderLevelEl.textContent = ladderState.currentLevel + ' / ' + LADDER_LEVELS;
-
   if (ladderState.currentLevel >= LADDER_LEVELS) {
     const win = ladderState.bet * totalMult;
     haptic('success');
@@ -1803,7 +1821,6 @@ function onLadderClick(level, stone) {
   }
   updateLadderVisual();
 }
-
 function endLadder(won) {
   ladderState.active = false;
   ladderActionBtn.style.display = 'block';
@@ -1811,7 +1828,6 @@ function endLadder(won) {
   if (!won) ladderState.currentLevel = 0;
   updateLadderVisual();
 }
-
 function cashoutLadder() {
   if (!ladderState.active) return;
   if (ladderState.currentLevel === 0) { toast('Пройдите хотя бы один уровень'); haptic('warning'); return; }
@@ -1822,10 +1838,8 @@ function cashoutLadder() {
   recordRound('ladder', true, { bet: ladderState.bet, level: ladderState.currentLevel - 1, bad: ladderState.badPerLevel, win, cashout: true });
   endLadder(true);
 }
-
 ladderActionBtn.addEventListener('click', startLadder);
 ladderCashoutBtn.addEventListener('click', cashoutLadder);
-
 document.querySelectorAll('#ladderBombsRow .mult-chip').forEach(chip => {
   chip.addEventListener('click', () => {
     if (ladderState.active) { toast('Сначала завершите игру'); haptic('warning'); return; }
@@ -1837,16 +1851,9 @@ document.querySelectorAll('#ladderBombsRow .mult-chip').forEach(chip => {
 });
 
 /* ============================================================
-   UPGRADE (Wheel + Gift picker)
+   UPGRADE
    ============================================================ */
-const upgradeState = {
-  targetMult: 2,
-  targetGiftId: null, // если выбрана цель-подарок
-  spinning: false,
-  angle: 0,
-  bet: 0,
-  result: null
-};
+const upgradeState = { targetMult: 2, targetGiftId: null, spinning: false, angle: 0, bet: 0, result: null };
 const wheelCanvas = document.getElementById('wheelCanvas');
 const wheelCtx = wheelCanvas.getContext('2d');
 const wheelCenterMult = document.getElementById('wheelCenterMult');
@@ -1857,18 +1864,14 @@ const upgradePickerArt = document.getElementById('upgradePickerArt');
 const upgradePickerName = document.getElementById('upgradePickerName');
 const upgradePickerPrice = document.getElementById('upgradePickerPrice');
 
-// Шанс победы для заданного множителя = (1 - HOUSE_EDGE) / mult
 function winChance(mult) {
   return Math.min(0.99, Math.max(0.001, (1 - HOUSE_EDGE) / mult));
 }
-
 function drawWheel(angleRad) {
   const w = wheelCanvas.width, h = wheelCanvas.height;
   const cx = w / 2, cy = h / 2;
   const r = Math.min(w, h) / 2 - 6;
   wheelCtx.clearRect(0, 0, w, h);
-
-  // красный
   wheelCtx.beginPath();
   wheelCtx.arc(cx, cy, r, 0, Math.PI * 2);
   const redGrad = wheelCtx.createRadialGradient(cx, cy, r * 0.3, cx, cy, r);
@@ -1876,8 +1879,6 @@ function drawWheel(angleRad) {
   redGrad.addColorStop(1, '#201012');
   wheelCtx.fillStyle = redGrad;
   wheelCtx.fill();
-
-  // зелёный
   const chance = winChance(upgradeState.targetMult);
   const winAngle = chance * Math.PI * 2;
   const start = -Math.PI / 2 + angleRad;
@@ -1891,8 +1892,6 @@ function drawWheel(angleRad) {
   greenGrad.addColorStop(1, '#007A00');
   wheelCtx.fillStyle = greenGrad;
   wheelCtx.fill();
-
-  // разделители
   wheelCtx.lineWidth = 2;
   wheelCtx.strokeStyle = 'rgba(0,0,0,0.5)';
   wheelCtx.beginPath();
@@ -1904,7 +1903,6 @@ function drawWheel(angleRad) {
   wheelCtx.lineTo(cx + Math.cos(end) * r, cy + Math.sin(end) * r);
   wheelCtx.stroke();
 }
-
 function updateUpgradeUI() {
   if (upgradeState.targetGiftId) {
     const g = GIFTS.find(x => x.id === upgradeState.targetGiftId);
@@ -1923,15 +1921,12 @@ function updateUpgradeUI() {
   wheelCenterMult.textContent = 'x' + upgradeState.targetMult;
   drawWheel(upgradeState.angle);
 }
-
 function easeOutQuart(t) { return 1 - Math.pow(1 - t, 4); }
 
 async function spinUpgrade() {
   if (upgradeState.spinning) return;
   const bet = getBet('upgradeBet');
   if (!validateBet(bet)) return;
-
-  // Если цель — подарок, проверяем: ставка должна быть >= 1, множитель уже посчитан
   haptic('medium');
   setBalance(balance - bet);
   upgradeState.spinning = true;
@@ -1939,11 +1934,9 @@ async function spinUpgrade() {
   upgradeFlash.textContent = '';
   upgradeSpinBtn.disabled = true;
   upgradeSpinBtn.textContent = 'Вращение...';
-
   const r = await fairFloat('upgrade');
   const chance = winChance(upgradeState.targetMult);
   const isWin = r < chance;
-
   const winAngle = chance * Math.PI * 2;
   let localTarget;
   if (isWin) {
@@ -1959,13 +1952,11 @@ async function spinUpgrade() {
   let start = upgradeState.angle;
   let final = baseAngle + turns * Math.PI * 2;
   while (final <= start + Math.PI * 2 * 4) final += Math.PI * 2;
-
   const duration = 3600;
   const startTime = performance.now();
   setTimeout(() => haptic('light'), 600);
   setTimeout(() => haptic('light'), 1400);
   setTimeout(() => haptic('light'), 2200);
-
   function frame(now) {
     const t = Math.min(1, (now - startTime) / duration);
     const eased = easeOutQuart(t);
@@ -1988,7 +1979,6 @@ function finishUpgrade(isWin) {
   upgradeSpinBtn.textContent = 'Крутить';
   if (isWin) {
     haptic('success');
-    // Если цель — подарок, добавляем его в инвентарь, иначе начисляем звёзды
     if (upgradeState.targetGiftId) {
       const g = GIFTS.find(x => x.id === upgradeState.targetGiftId);
       if (g) {
@@ -2014,25 +2004,21 @@ function finishUpgrade(isWin) {
     recordRound('upgrade', false, { bet: upgradeState.bet, mult: upgradeState.targetMult, giftId: upgradeState.targetGiftId });
   }
 }
-
 upgradeSpinBtn.addEventListener('click', spinUpgrade);
 
 /* Upgrade gift picker */
 const giftPickerModal = document.getElementById('giftPickerModal');
 const pickerGrid = document.getElementById('pickerGrid');
 let pickerSelected = null;
-
 upgradePickerCurrent.addEventListener('click', () => {
   if (upgradeState.spinning) { toast('Дождитесь окончания'); return; }
   haptic('light');
   pickerSelected = null;
   pickerGrid.innerHTML = '';
-  // добавь опцию "просто множитель"
   GIFTS.forEach(g => {
     const item = document.createElement('div');
     item.className = 'picker-item';
     item.dataset.giftId = g.id;
-    const priceRatio = g.price;
     item.innerHTML = `
       <div class="picker-item-art" style="background: linear-gradient(135deg, ${g.colors[0]} 0%, ${g.colors[1]} 100%);">${svgIcon(g.icon)}</div>
       <div class="picker-item-name">${g.name}</div>
@@ -2048,7 +2034,6 @@ upgradePickerCurrent.addEventListener('click', () => {
   });
   giftPickerModal.classList.add('show');
 });
-
 document.getElementById('pickerCancelBtn').addEventListener('click', () => {
   giftPickerModal.classList.remove('show');
   haptic('light');
@@ -2139,9 +2124,12 @@ function renderInventory() {
     return;
   }
   invEmpty.style.display = 'none';
-  inventory.forEach((inv, idx) => {
+  inventory.forEach(inv => {
     const g = GIFTS.find(x => x.id === inv.giftId);
     if (!g) return;
+    const canWithdraw = g.price >= MIN_WITHDRAW;
+    const withdrawLabel = canWithdraw ? 'Вывести' : `Вывод от ${MIN_WITHDRAW} ⭐`;
+    const withdrawClass = canWithdraw ? 'gift-withdraw-btn' : 'gift-withdraw-btn locked';
     const card = document.createElement('div');
     card.className = 'gift-card';
     card.innerHTML = `
@@ -2154,7 +2142,7 @@ function renderInventory() {
         </div>
       </div>
       <button class="gift-buy-btn" data-sell="${inv.uid}">Продать за ${g.price}⭐</button>
-      <button class="gift-buy-btn nft" data-withdraw="${inv.uid}" style="margin-top:4px;">Вывести в профиль</button>
+      <button class="${withdrawClass}" data-withdraw="${inv.uid}" ${canWithdraw ? '' : 'disabled'}>${withdrawLabel}</button>
     `;
     invGrid.appendChild(card);
   });
@@ -2176,11 +2164,202 @@ function renderInventory() {
   });
   invGrid.querySelectorAll('[data-withdraw]').forEach(btn => {
     btn.addEventListener('click', () => {
-      haptic('medium');
-      toast('Вывод в профиль — заглушка (интеграция с Telegram API)');
+      if (btn.disabled) return;
+      const uid = parseFloat(btn.dataset.withdraw);
+      const idx = inventory.findIndex(x => x.uid === uid);
+      if (idx < 0) return;
+      const g = GIFTS.find(x => x.id === inventory[idx].giftId);
+      if (!g) return;
+      if (g.price < MIN_WITHDRAW) {
+        toast(`Вывод доступен от ${MIN_WITHDRAW} ⭐`);
+        haptic('warning');
+        return;
+      }
+      // Удаляем из инвентаря
+      inventory.splice(idx, 1);
+      saveState();
+      renderInventory();
+      updateInvCount();
+      haptic('success');
+      generateWithdrawReceipt(g, inventory[idx] ? inventory[idx].num : Math.floor(Math.random() * 99999));
     });
   });
 }
+
+/* ============================================================
+   ВЫВОД: ЧЕК
+   ============================================================ */
+async function generateWithdrawReceipt(gift, num) {
+  const now = new Date();
+  const timeStr = now.toLocaleString('ru-RU', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  });
+  const giftNum = (num !== undefined && num !== null) ? String(num).padStart(5, '0') : String(Math.floor(Math.random() * 99999)).padStart(5, '0');
+  const requestId = 'WD-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(Math.random() * 9999).toString().padStart(4, '0');
+
+  // Формируем тело чека, по которому считаем хеш
+  const payload = `withdraw|${requestId}|${gift.id}|${gift.name}|${gift.price}|${giftNum}|${timeStr}`;
+  const hash = await sha256Hex(`${SECRET_SALT}:${payload}`);
+  const shortHash = hash.slice(0, 20).toUpperCase();
+
+  const receiptText =
+`═══════════════════════════════
+       NEBULA · ЧЕК НА ВЫВОД
+═══════════════════════════════
+Заявка:       ${requestId}
+Подарок:      ${gift.name}
+Номер NFT:    #${giftNum}
+Стоимость:    ${gift.price} ⭐
+Редкость:     ${gift.rarity === 'nft' ? 'Коллекционный NFT' : 'Обычный'}
+Дата:         ${timeStr}
+───────────────────────────────
+Контрольный хеш (SHA-256):
+${shortHash}...
+───────────────────────────────
+Проверка: SHA-256("${SECRET_SALT}:" + payload)
+═══════════════════════════════`;
+
+  const preview = document.getElementById('receiptPreview');
+  preview.textContent = receiptText;
+
+  const modal = document.getElementById('receiptModal');
+  modal.classList.add('show');
+
+  // Сохраняем в data-атрибут кнопки «Копировать»
+  const copyBtn = document.getElementById('receiptCopyBtn');
+  copyBtn.dataset.text = receiptText;
+}
+
+document.getElementById('receiptCloseBtn').addEventListener('click', () => {
+  document.getElementById('receiptModal').classList.remove('show');
+  haptic('light');
+});
+document.getElementById('receiptCopyBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('receiptCopyBtn');
+  const text = btn.dataset.text || '';
+  if (!text) return;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      toast('Чек скопирован');
+      haptic('success');
+    } else {
+      // Fallback
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast('Чек скопирован');
+      haptic('success');
+    }
+  } catch (e) {
+    toast('Не удалось скопировать. Выделите текст вручную.');
+    haptic('error');
+  }
+});
+
+/* ============================================================
+   ПОПОЛНЕНИЕ: ПРОМОКОДЫ
+   ============================================================ */
+const promoModal = document.getElementById('promoModal');
+const promoInput = document.getElementById('promoInput');
+const promoActivateBtn = document.getElementById('promoActivateBtn');
+const promoCloseBtn = document.getElementById('promoCloseBtn');
+
+// Тестовые готовые коды
+const STATIC_PROMOCODES = {
+  'START500': 500,
+  'VIP1000': 1000,
+  'MEGA2500': 2500
+};
+
+// Генератор кодов в формате RADAR-<сумма>-<4 hex>
+// Код действителен, если совпадает с SHA-256(SECRET_SALT:сумма:номер_чека) первые 4 символа
+// Пример: сумма=500, номер_чека=001 → hash = sha256("RADAR777:500:001"), код = "RADAR-500-" + hash[0:4].toUpperCase()
+// При ручной проверке кода мы не знаем номер чека, поэтому перебираем 000..999.
+async function findPromoAmount(code) {
+  const upper = code.toUpperCase().trim();
+
+  // 1) Статичные тестовые коды
+  if (STATIC_PROMOCODES[upper] !== undefined) {
+    return STATIC_PROMOCODES[upper];
+  }
+
+  // 2) Динамические RADAR-<сумма>-<4hex>
+  const m = upper.match(/^RADAR-(\d+)-([A-F0-9]{4})$/);
+  if (!m) return null;
+  const amount = parseInt(m[1], 10);
+  const suffix = m[2];
+  if (!amount || amount < MIN_TOPUP) return null;
+
+  // Перебираем номера чеков 000..999 и проверяем хеш
+  for (let n = 0; n <= 999; n++) {
+    const numStr = String(n).padStart(3, '0');
+    const hash = await sha256Hex(`${SECRET_SALT}:${amount}:${numStr}`);
+    if (hash.slice(0, 4).toUpperCase() === suffix) {
+      return amount;
+    }
+  }
+  return null;
+}
+
+function openPromoModal() {
+  promoInput.value = '';
+  promoModal.classList.add('show');
+  setTimeout(() => { try { promoInput.focus(); } catch (e) {} }, 250);
+}
+
+async function activatePromoCode() {
+  const raw = (promoInput.value || '').trim();
+  if (!raw) { toast('Введите код'); haptic('error'); return; }
+  const upper = raw.toUpperCase();
+
+  if (usedCodes.has(upper)) {
+    toast('Этот код уже был активирован');
+    haptic('error');
+    return;
+  }
+
+  promoActivateBtn.disabled = true;
+  promoActivateBtn.textContent = 'Проверка...';
+
+  const amount = await findPromoAmount(upper);
+
+  promoActivateBtn.disabled = false;
+  promoActivateBtn.textContent = 'Активировать';
+
+  if (!amount) {
+    toast('Неверный или просроченный код');
+    haptic('error');
+    return;
+  }
+
+  // Успех
+  usedCodes.add(upper);
+  addStars(amount);
+  saveState();
+  haptic('success');
+  toast(`✅ Активировано: +${amount} ⭐`);
+  promoModal.classList.remove('show');
+}
+
+document.getElementById('btnTopup').addEventListener('click', () => {
+  haptic('medium');
+  openPromoModal();
+});
+promoActivateBtn.addEventListener('click', activatePromoCode);
+promoInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); activatePromoCode(); }
+});
+promoCloseBtn.addEventListener('click', () => {
+  promoModal.classList.remove('show');
+  haptic('light');
+});
 
 /* ============================================================
    FAIRNESS MODAL
@@ -2200,26 +2379,6 @@ document.getElementById('fairClientSeed').addEventListener('input', (e) => {
 });
 
 /* ============================================================
-   TOPUP
-   ============================================================ */
-document.getElementById('btnTopup').addEventListener('click', () => {
-  haptic('medium');
-  // ДЕМО-пополнение (удалить в проде)
-  // Реальная интеграция:
-  // if (tg && tg.openInvoice) {
-  //   const invoiceLink = '...'; // получить с бэкенда через Bot API createInvoiceLink
-  //   tg.openInvoice(invoiceLink, (status) => {
-  //     if (status === 'paid') { toast('Оплата прошла'); haptic('success'); }
-  //     else if (status === 'cancelled') toast('Отменено');
-  //     else if (status === 'failed') toast('Ошибка оплаты');
-  //   });
-  // } else toast('Оплата доступна только в Telegram');
-  setBalance(balance + 500);
-  toast('Демо-пополнение: +500 ⭐');
-  haptic('success');
-});
-
-/* ============================================================
    INIT
    ============================================================ */
 async function init() {
@@ -2227,6 +2386,7 @@ async function init() {
   buildMinesGrid();
   buildLadder();
   renderShop();
+  renderInventory();
   updateUpgradeUI();
   await initFairness();
   minesState.minesCount = 2;
@@ -2235,4 +2395,4 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 else init();
 </script>
 </body>
-  </html>
+        </html>
