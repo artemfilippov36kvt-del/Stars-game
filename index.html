@@ -1717,32 +1717,29 @@ async function init() {
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
   (initCasesDOM)(function() {
-const main = document.querySelector('.main-scroll');
-const nav = document.querySelector('.bottom-nav');
-if (!main || !nav) return;
-const sec = document.createElement('section');
-sec.className = 'screen';
-sec.id = 'screen-cases';
-main.appendChild(sec);
-screens.cases = sec;
-const navBtn = document.createElement('button');
-navBtn.className = 'nav-btn';
-navBtn.dataset.screen = 'cases';
-navBtn.innerHTML = 'Кейсы';
-nav.appendChild(navBtn);
-// Обработчик нажатия на кнопку навигации и список доступных кейсов (базовый, редкий, эпик, NFT легенда)
-navBtn.addEventListener('click', () => { ... });
-const CASES = [ ... ];
-// Инициализация интерфейса выбора кейсов, количества попыток (x1-x5) и списка выпадения предметов
-sec.innerHTML = ...;
-function updateUI() { ... }
-// Логика прокрутки рулетки, расчета шансов выпадения и обработки результатов
-async function rollDrop() { ... }
-async function runCases(fast) { ... }
-function finishDrops(winners) { ... }
-openBtn.onclick = () => runCases(false);
-fastBtn.onclick = () => runCases(true);
-updateUI();
+(function() {
+  const m = document.querySelector('.main-scroll');
+  const n = document.querySelector('.bottom-nav');
+  if (!m || !n) return;
+  const s = document.createElement('section');
+  s.className = 'screen';
+  s.id = 'screen-cases';
+  m.appendChild(s);
+  screens.cases = s;
+  const b = document.createElement('button');
+  b.className = 'nav-btn';
+  b.dataset.screen = 'cases';
+  b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/></svg><span>Кейсы</span>';
+  n.appendChild(b);
+  b.onclick = () => {
+    haptic('light');
+    document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    Object.keys(screens).forEach(k => screens[k].classList.toggle('active', k === 'cases'));
+  };
+  const CASES = [
+
+
 })();const CASES = [
 { id: 'c1', name: 'Базовый', price: 50, bg: 'linear-gradient(135deg,#7DA8FF,#1F3AA8)', icon: 'box', items: [
 { id: 'bear', w: 35 }, { id: 'rose', w: 30 }, { id: 'cake', w: 20 }, { id: 'cup', w: 10 }, { id: 'clover', w: 5 }
@@ -1778,8 +1775,13 @@ fastBtn.style.flex = '1';
 fastBtn.textContent = '⚡ Быстро';
 const dCard = mk('div', 'card', s);
 mk('div', 'card-label', dCard).textContent = 'Возможный дроп';
-const lootList = mk('div', 'case-loot-list', dCard);function slotHTML(g) {
-return '' + svgIcon(g.icon) + '' + g.price + '⭐';
+const lootList = mk('div', 'case-loot-list', dCard);function 
+  function slotHTML(g) {
+const d = document.createElement('div');
+d.className = 'case-slot';
+d.style.background = 'linear-gradient(135deg,' + g.colors.at(0) + ',' + g.colors.at(1) + ')';
+d.innerHTML = svgIcon(g.icon) + '' + g.price + '⭐';
+return d.outerHTML;
 }
 function idleReels() {
 reelsWrap.innerHTML = '';
