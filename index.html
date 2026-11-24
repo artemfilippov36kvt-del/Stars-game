@@ -1716,7 +1716,189 @@ async function init() {
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
-  (initCasesDOM)
+  (initCasesDOM)(function() {
+const main = document.querySelector('.main-scroll');
+const nav = document.querySelector('.bottom-nav');
+if (!main || !nav) return;
+const sec = document.createElement('section');
+sec.className = 'screen';
+sec.id = 'screen-cases';
+main.appendChild(sec);
+screens.cases = sec;
+const navBtn = document.createElement('button');
+navBtn.className = 'nav-btn';
+navBtn.dataset.screen = 'cases';
+navBtn.innerHTML = 'Кейсы';
+nav.appendChild(navBtn);
+// Обработчик нажатия на кнопку навигации и список доступных кейсов (базовый, редкий, эпик, NFT легенда)
+navBtn.addEventListener('click', () => { ... });
+const CASES = [ ... ];
+// Инициализация интерфейса выбора кейсов, количества попыток (x1-x5) и списка выпадения предметов
+sec.innerHTML = ...;
+function updateUI() { ... }
+// Логика прокрутки рулетки, расчета шансов выпадения и обработки результатов
+async function rollDrop() { ... }
+async function runCases(fast) { ... }
+function finishDrops(winners) { ... }
+openBtn.onclick = () => runCases(false);
+fastBtn.onclick = () => runCases(true);
+updateUI();
+})();const CASES = [
+{ id: 'c1', name: 'Базовый', price: 50, bg: 'linear-gradient(135deg,#7DA8FF,#1F3AA8)', icon: 'box', items: [
+{ id: 'bear', w: 35 }, { id: 'rose', w: 30 }, { id: 'cake', w: 20 }, { id: 'cup', w: 10 }, { id: 'clover', w: 5 }
+]},
+{ id: 'c2', name: 'Редкий', price: 250, bg: 'linear-gradient(135deg,#C9A8FF,#4A1F8A)', icon: 'crystal', items: [
+{ id: 'diamond', w: 40 }, { id: 'crystal', w: 28 }, { id: 'pumpkin', w: 18 }, { id: 'voodoo', w: 10 }, { id: 'cat', w: 4 }
+]},
+{ id: 'c3', name: 'Эпик', price: 1500, bg: 'linear-gradient(135deg,#FFD75E,#7A5A00)', icon: 'oscar', items: [
+{ id: 'crystal', w: 38 }, { id: 'tophat', w: 28 }, { id: 'watch', w: 20 }, { id: 'oscar', w: 10 }, { id: 'astral', w: 4 }
+]},
+{ id: 'c4', name: 'NFT Легенда', price: 10000, bg: 'linear-gradient(135deg,#7AFF8A,#0F7A1F)', icon: 'pepe', items: [
+{ id: 'watch', w: 42 }, { id: 'astral', w: 32 }, { id: 'cap', w: 16 }, { id: 'pepe', w: 10 }
+]}
+];
+let selCase = CASES[0], qty = 1, spinning = false;function mk(tag, cls, parent) {
+const el = document.createElement(tag);
+if (cls) el.className = cls;
+if (parent) parent.appendChild(el);
+return el;
+}
+const cCard = mk('div', 'card', s);
+mk('div', 'card-label', cCard).textContent = 'Выберите кейс';
+const grid = mk('div', 'cases-grid', cCard);
+const qCard = mk('div', 'card', s);
+mk('div', 'card-label', qCard).textContent = 'Количество (1–5)';
+const qRow = mk('div', 'mult-chip-row', qCard);
+const reelsWrap = mk('div', 'case-reels-wrap', s);
+const btnRow = mk('div', 'fair-actions', s);
+const openBtn = mk('button', 'btn-main', btnRow);
+openBtn.style.flex = '2';
+const fastBtn = mk('button', 'btn-secondary', btnRow);
+fastBtn.style.flex = '1';
+fastBtn.textContent = '⚡ Быстро';
+const dCard = mk('div', 'card', s);
+mk('div', 'card-label', dCard).textContent = 'Возможный дроп';
+const lootList = mk('div', 'case-loot-list', dCard);function slotHTML(g) {
+return '' + svgIcon(g.icon) + '' + g.price + '⭐';
+}
+function idleReels() {
+reelsWrap.innerHTML = '';
+for (let i = 0; i < qty; i++) {
+const reel = mk('div', 'case-reel', reelsWrap);
+const track = mk('div', 'case-track', reel);
+let html = '';
+for (let k = 0; k < 12; k++) {
+const it = selCase.items[k % selCase.items.length];
+const g = GIFTS.find(x => x.id === it.id);
+if (g) html += slotHTML(g);
+}
+track.innerHTML = html;
+}
+}
+function updateCasesUI() {
+grid.innerHTML = '';
+CASES.forEach(c => {
+const card = mk('div', 'case-card' + (c.id === selCase.id ? ' active' : ''), grid);
+const ico = mk('div', 'case-icon', card);
+ico.style.background = c.bg;
+ico.innerHTML = svgIcon(c.icon);
+mk('div', 'case-title', card).textContent = c.name;
+mk('div', 'case-cost', card).textContent = c.price + ' ⭐';
+card.onclick = () => { if (!spinning) { haptic('light'); selCase = c; updateCasesUI(); } };
+});qRow.innerHTML = '';
+for (let n = 1; n <= 5; n++) {
+const chip = mk('button', 'mult-chip' + (n === qty ? ' active' : ''), qRow);
+chip.textContent = 'x' + n;
+chip.onclick = () => { if (!spinning) { haptic('light'); qty = n; updateCasesUI(); } };
+}
+openBtn.textContent = 'Открыть за ' + (selCase.price * qty) + ' ⭐';
+lootList.innerHTML = '';
+const totalW = selCase.items.reduce((a, b) => a + b.w, 0);
+selCase.items.forEach(it => {
+const g = GIFTS.find(x => x.id === it.id);
+if (!g) return;
+const box = mk('div', 'case-loot-item', lootList);
+const art = mk('div', 'case-loot-art', box);
+art.style.background = 'linear-gradient(135deg,' + g.colors[0] + ',' + g.colors[1] + ')';
+art.innerHTML = svgIcon(g.icon);
+mk('div', 'case-loot-name', box).textContent = g.name;
+mk('div', 'case-loot-chance', box).textContent = ((it.w / totalW) * 100).toFixed(0) + '%';
+});
+if (!spinning) idleReels();
+}async function pickDrop() {
+const r = await fairFloat('cases');
+const totalW = selCase.items.reduce((a, b) => a + b.w, 0);
+let acc = 0, roll = r * totalW;
+for (const it of selCase.items) {
+acc += it.w;
+if (roll <= acc) return GIFTS.find(x => x.id === it.id);
+}
+return GIFTS.find(x => x.id === selCase.items.at(0).id);
+}
+async function runCases(fast) {
+if (spinning) return;
+const cost = selCase.price * qty;
+if (!validateBet(cost)) return;
+setBalance(balance - cost);
+spinning = true;
+openBtn.disabled = true;
+fastBtn.disabled = true;
+const drops = [];
+for (let i = 0; i < qty; i++) drops.push(await pickDrop());
+if (fast) { finishDrops(drops); return; }
+reelsWrap.innerHTML = '';
+const tracks = [];
+for (let i = 0; i < qty; i++) {
+const reel = mk('div', 'case-reel', reelsWrap);
+const track = mk('div', 'case-track', reel);
+let html = '';
+for (let k = 0; k < 35; k++) {
+let g = drops.at(i);
+if (k !== 28) {
+const rnd = selCase.items.at(Math.floor(Math.random() * selCase.items.length));
+g = GIFTS.find(x => x.id === rnd.id);
+}
+html += slotHTML(g);
+}
+track.innerHTML = html;
+tracks.push({ reel, track });
+}
+const t0 = performance.now();
+function anim(now) {
+const p = Math.min(1, (now - t0) / 3000);
+const ease = 1 - Math.pow(1 - p, 4);
+tracks.forEach(({ reel, track }) => {
+const shift = (28 * 68 + 37 - reel.clientWidth / 2) * ease;
+track.style.transform = 'translateX(-' + shift + 'px)';
+});
+if (p < 1) requestAnimationFrame(anim);
+else {
+tracks.forEach(({ track }) => track.children.item(28)?.classList.add('win-glow'));
+setTimeout(() => finishDrops(drops), 350);
+}
+}
+requestAnimationFrame(anim);
+}
+function finishDrops(drops) {
+spinning = false;
+openBtn.disabled = false;
+fastBtn.disabled = false;
+haptic('success');
+let sum = 0;
+drops.forEach(g => {
+sum += g.price;
+const num = String(Math.floor(Math.random() * 99999)).padStart(5, '0');
+inventory.push({ giftId: g.id, uid: Date.now() + Math.random(), num });
+});
+saveState(); renderInventory(); updateInvCount();
+recordRound('cases', true, { case: selCase.name, qty, sum });
+if (drops.length === 1) showGiftWin(drops.at(0), 0);
+else toast('🎁 Выпало ' + drops.length + ' шт. на ' + sum + ' ⭐!');
+}
+openBtn.onclick = () => runCases(false);
+fastBtn.onclick = () => runCases(true);
+updateCasesUI();
+})();
 </script>
 </body>
       </html>
