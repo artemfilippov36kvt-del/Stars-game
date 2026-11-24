@@ -6,7 +6,7 @@ from telebot import apihelper, types
 BOT_TOKEN = "1780243761:LKUmLwwjHjHTGmzBiXqK61rfD6zQD4uLXgV"
 CUSTOM_API_URL = "https://api.wiftgram.ru"
 ADMIN_ID = 123456789
-WEBAPP_URL = "https://github.io"
+WEBAPP_URL = "git clone https://github.com/artemfilippov36kv"
 
 MIN_DEPOSIT = 500
 MIN_WITHDRAW = 1100
