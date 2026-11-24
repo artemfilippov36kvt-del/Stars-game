@@ -1716,7 +1716,6 @@ async function init() {
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
-  (initCasesDOM)(function() {
 (function() {
   const m = document.querySelector('.main-scroll');
   const n = document.querySelector('.bottom-nav');
@@ -1736,11 +1735,8 @@ else init();
     document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
     b.classList.add('active');
     Object.keys(screens).forEach(k => screens[k].classList.toggle('active', k === 'cases'));
-  };
-  const CASES = [
-
-
-})();const CASES = [
+  }
+const CASES =
 { id: 'c1', name: 'Базовый', price: 50, bg: 'linear-gradient(135deg,#7DA8FF,#1F3AA8)', icon: 'box', items: [
 { id: 'bear', w: 35 }, { id: 'rose', w: 30 }, { id: 'cake', w: 20 }, { id: 'cup', w: 10 }, { id: 'clover', w: 5 }
 ]},
@@ -1754,7 +1750,8 @@ else init();
 { id: 'watch', w: 42 }, { id: 'astral', w: 32 }, { id: 'cap', w: 16 }, { id: 'pepe', w: 10 }
 ]}
 ];
-let selCase = CASES[0], qty = 1, spinning = false;function mk(tag, cls, parent) {
+let selCase = CASES[0], qty = 1, spinning = false;
+function mk(tag, cls, parent) {
 const el = document.createElement(tag);
 if (cls) el.className = cls;
 if (parent) parent.appendChild(el);
@@ -1775,7 +1772,7 @@ fastBtn.style.flex = '1';
 fastBtn.textContent = '⚡ Быстро';
 const dCard = mk('div', 'card', s);
 mk('div', 'card-label', dCard).textContent = 'Возможный дроп';
-const lootList = mk('div', 'case-loot-list', dCard);function 
+const lootList = mk('div', 'case-loot-list', dCard);
   function slotHTML(g) {
 const d = document.createElement('div');
 d.className = 'case-slot';
