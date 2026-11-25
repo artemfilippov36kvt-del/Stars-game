@@ -639,17 +639,6 @@ function addStars(v) {
 function updateInvCount() {
   const el = document.getElementById('invCount'); if (el) el.textContent = '(' + inventory.length + ')';
 }
-
-  document.getElementById('balanceDisplay').textContent = Math.floor(balance);
-  const pb = document.getElementById('profileBalance'); if(pb) pb.textContent = Math.floor(balance) + ' ⭐';
-  const pi = document.getElementById('profileInv'); if(pi) pi.textContent = inventory.length;
-}
-function setBalance(v) { balance = Math.max(0, Math.round(v)); saveState(); renderBalance(); }
-function addStars(v) { setBalance(balance + v); }
-function updateInvCount() {
-  const el = document.getElementById('invCount'); if (el) el.textContent = '(' + inventory.length + ')';
-}
-
 /* ============================================================
    PROVABLY FAIR
    ============================================================ */
