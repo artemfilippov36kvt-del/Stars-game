@@ -735,15 +735,10 @@ function generateCaseWeights(casePrice, poolIds) {
   let totalRaw = pool.reduce((sum, g) => sum + (1 / g.price), 0);
   const targetEv = casePrice * (1 - HOUSE_EDGE);
   
-  function generateCaseWeights(casePrice, poolIds) {
+function generateCaseWeights(casePrice, poolIds) {
   const pool = GIFTS.filter(g => poolIds.includes(g.id)).sort((a, b) => a.price - b.price);
   if (pool.length === 0) return [];
 
-  // Настраиваем шансы так, чтобы матожидание было равно casePrice * (1 - HOUSE_EDGE)
-  // Делим пул на "частые" (дешевле кейса) и "редкие" (дороже кейса)
-  const targetEv = casePrice * (1 - HOUSE_EDGE);
-  
-  // Присваиваем веса обратно пропорционально разнице от цены кейса, но с нормальным шансом на окупаемость (~30-35%)
   const rawWeights = pool.map(g => {
     const ratio = g.price / casePrice;
     if (ratio <= 1) return 1 / Math.pow(ratio, 0.7);
@@ -757,7 +752,6 @@ function generateCaseWeights(casePrice, poolIds) {
   }));
 }
 
-}
 
 async function openCases(fast = false) {
   if (caseSpinning) return;
