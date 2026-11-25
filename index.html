@@ -568,32 +568,26 @@ function svgIcon(type) {
   return icons[type] || icons.bear;
 }
 
-const API_URL = "api.wiftgram.ru"; // <-- Впишите адрес вашего сервера
-const userId = tg?.initDataUnsafe?.user?.id;
-let balance = 0, inventory = [];
+let balance = 0, inventory = [], usedPromos = [];
 
-async function loadState() {
-  if (!userId) {
-    renderBalance(); renderInventory();
-    return;
-  }
+function loadState() {
   try {
-    const res = await fetch(`${API_URL}/balance?user_id=${userId}`);
-    const data = await res.json();
-    if (data && data.balance !== undefined) {
-      balance = Math.max(0, Math.floor(data.balance));
-    }
-    if (data && Array.isArray(data.inventory)) {
-      inventory = data.inventory;
-    }
-  } catch (e) {
-    console.error("Ошибка загрузки баланса:", e);
-  }
+    const b = localStorage.getItem('nebula_balance');
+    const inv = localStorage.getItem('nebula_inventory');
+    const used = localStorage.getItem('nebula_used_promos');
+    balance = b !== null ? Number(b) : 0;
+    inventory = inv ? JSON.parse(inv) : [];
+    usedPromos = used ? JSON.parse(used) : [];
+  } catch (e) { balance = 0; inventory = []; usedPromos = []; }
   renderBalance(); renderInventory();
 }
 
 function saveState() {
-  // Локальное сохранение отключено, все данные идут через сервер
+  try {
+    localStorage.setItem('nebula_balance', String(balance));
+    localStorage.setItem('nebula_inventory', JSON.stringify(inventory));
+    localStorage.setItem('nebula_used_promos', JSON.stringify(usedPromos));
+  } catch (e) {}
 }
 
 function renderBalance() {
@@ -602,43 +596,12 @@ function renderBalance() {
   const pi = document.getElementById('profileInv'); if (pi) pi.textContent = inventory.length;
 }
 
-async function syncTransaction(diff) {
-  if (!userId || diff === 0) return;
-  try {
-    const res = await fetch(`${API_URL}/transaction`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        user_id: userId,
-        amount: diff,
-        type: diff < 0 ? 'bet' : 'win'
-      })
-    });
-    const data = await res.json();
-    if (data && data.balance !== undefined) {
-      balance = Math.max(0, Math.floor(data.balance));
-      renderBalance();
-    }
-  } catch (e) {
-    console.error("Ошибка синхронизации с сервером:", e);
-  }
-}
-
-function setBalance(v) {
-  const next = Math.max(0, Math.floor(v));
-  const diff = next - balance;
-  balance = next;
-  renderBalance();
-  syncTransaction(diff);
-}
-
-function addStars(v) {
-  setBalance(balance + v);
-}
-
+function setBalance(v) { balance = Math.max(0, Math.round(v)); saveState(); renderBalance(); }
+function addStars(v) { setBalance(balance + v); }
 function updateInvCount() {
   const el = document.getElementById('invCount'); if (el) el.textContent = '(' + inventory.length + ')';
 }
+
 /* ============================================================
    PROVABLY FAIR
    ============================================================ */
