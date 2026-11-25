@@ -1378,20 +1378,70 @@ document.getElementById('fairClientSeed').addEventListener('change', (e) => {
   fairness.clientSeed = e.target.value || 'player-seed';
   saveFairness();
 });
+// КНОПКА "+" — АКТИВАЦИЯ КОДА ИЗ ВАШЕЙ АДМИНКИ
+document.getElementById('btnTopup').addEventListener('click', async () => {
+  haptic('light');
+  const raw = prompt('Введите код пополнения (например, RADAR-500-...):');
+  if (!raw) return;
+  const code = raw.trim().toUpperCase();
 
-document.getElementById('btnTopup').addEventListener('click', () => {
-  haptic('light');
-  setBalance(balance + 10000);
-  toast('Баланс пополнен на 10000 ⭐ (демо)');
-});
-document.getElementById('btnWithdraw').addEventListener('click', () => {
-  haptic('light');
-  if (balance > 0) {
-    toast(`Запрос на вывод ${balance} ⭐ отправлен`);
-    setBalance(0);
-  } else {
-    toast('Недостаточно средств');
+  if (usedPromos.includes(code)) {
+    toast('❌ Этот код уже был активирован!');
+    haptic('error');
+    return;
   }
+
+  // Проверка формата RADAR-СУММА-НОМЕР-ПОДПИСЬ
+  const parts = code.split('-');
+  if (parts.length !== 4 || parts[0] !== 'RADAR') {
+    toast('❌ Неверный формат кода');
+    haptic('error');
+    return;
+  }
+
+  const amount = parseInt(parts[1], 10);
+  const nonce = parts[2];
+  const providedSig = parts[3];
+
+  const expectedHash = (await sha256Hex(`${SECRET_SALT}:${amount}:${nonce}`)).toUpperCase();
+  const expectedSig = expectedHash.slice(0, 4);
+
+  if (providedSig === expectedSig && amount >= 500) {
+    usedPromos.push(code);
+    addStars(amount);
+    toast(`✅ Начислено ${amount} ⭐!`);
+    haptic('success');
+  } else {
+    toast('🚨 Недействительный или поддельный код!');
+    haptic('error');
+  }
+});
+
+// КНОПКА "−" — СОЗДАНИЕ ПОДПИСАННОГО ЧЕКА НА ВЫВОД ДЛЯ АДМИНКИ
+document.getElementById('btnWithdraw').addEventListener('click', async () => {
+  haptic('light');
+  const amount = Math.floor(balance);
+  if (amount < 1100) {
+    toast('❌ Минимальная сумма вывода — 1100 ⭐');
+    haptic('error');
+    return;
+  }
+
+  const giftName = 'Вывод баланса';
+  const checkId = String(Math.floor(10000 + Math.random() * 90000));
+  const hash = (await sha256Hex(`${SECRET_SALT}:WITHDRAW:${giftName}:${amount}:${checkId}`)).toUpperCase();
+  const sig = hash.slice(0, 6);
+
+  const checkText = `Подарок: ${giftName} (${amount} ⭐) | ID: ${checkId} | Подпись: ${sig}`;
+  
+  setBalance(0);
+  try {
+    await navigator.clipboard.writeText(checkText);
+    toast('✅ Чек скопирован! Отправьте его администратору');
+  } catch (e) {
+    prompt('Скопируйте ваш чек на вывод и отправьте админу:', checkText);
+  }
+  haptic('success');
 });
 
 // Mines & Ladder placeholders to prevent errors if not fully implemented in prompt
