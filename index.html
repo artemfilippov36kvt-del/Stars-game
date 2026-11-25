@@ -727,13 +727,6 @@ document.querySelectorAll('#caseOpenCount .mult-chip').forEach(btn => {
 });
 
 let caseSpinning = false;
-function generateCaseWeights(casePrice, poolIds) {
-  const pool = GIFTS.filter(g => poolIds.includes(g.id));
-  // Формула весов с учётом 8% house edge:
-  // Сумма (weight_i * price_i) должна быть равна casePrice * 0.92
-  // Используем обратную пропорциональность цене: raw_weight = 1 / price
-  let totalRaw = pool.reduce((sum, g) => sum + (1 / g.price), 0);
-  const targetEv = casePrice * (1 - HOUSE_EDGE);
   
 function generateCaseWeights(casePrice, poolIds) {
   const pool = GIFTS.filter(g => poolIds.includes(g.id)).sort((a, b) => a.price - b.price);
