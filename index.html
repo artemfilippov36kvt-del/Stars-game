@@ -568,21 +568,78 @@ function svgIcon(type) {
   return icons[type] || icons.bear;
 }
 
+const API_URL = "api.wiftgram.ru"; // <-- Впишите адрес вашего сервера
+const userId = tg?.initDataUnsafe?.user?.id;
 let balance = 0, inventory = [];
-function loadState() {
+
+async function loadState() {
+  if (!userId) {
+    renderBalance(); renderInventory();
+    return;
+  }
   try {
-    const b = localStorage.getItem('nebula_balance_v3');
-    if (b !== null) balance = Math.max(0, parseInt(b, 10));
-    const inv = localStorage.getItem('nebula_inventory_v3');
-    if (inv) inventory = JSON.parse(inv) || [];
-  } catch (e) {}
-  renderBalance(); renderInventory(); updateInvCount();
+    const res = await fetch(`${API_URL}/balance?user_id=${userId}`);
+    const data = await res.json();
+    if (data && data.balance !== undefined) {
+      balance = Math.max(0, Math.floor(data.balance));
+    }
+    if (data && Array.isArray(data.inventory)) {
+      inventory = data.inventory;
+    }
+  } catch (e) {
+    console.error("Ошибка загрузки баланса:", e);
+  }
+  renderBalance(); renderInventory();
 }
+
 function saveState() {
-  try { localStorage.setItem('nebula_balance_v3', String(Math.round(balance))); } catch (e) {}
-  try { localStorage.setItem('nebula_inventory_v3', JSON.stringify(inventory)); } catch (e) {}
+  // Локальное сохранение отключено, все данные идут через сервер
 }
+
 function renderBalance() {
+  document.getElementById('balanceDisplay').textContent = Math.floor(balance);
+  const pb = document.getElementById('profileBalance'); if (pb) pb.textContent = Math.floor(balance) + ' ⭐';
+  const pi = document.getElementById('profileInv'); if (pi) pi.textContent = inventory.length;
+}
+
+async function syncTransaction(diff) {
+  if (!userId || diff === 0) return;
+  try {
+    const res = await fetch(`${API_URL}/transaction`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: userId,
+        amount: diff,
+        type: diff < 0 ? 'bet' : 'win'
+      })
+    });
+    const data = await res.json();
+    if (data && data.balance !== undefined) {
+      balance = Math.max(0, Math.floor(data.balance));
+      renderBalance();
+    }
+  } catch (e) {
+    console.error("Ошибка синхронизации с сервером:", e);
+  }
+}
+
+function setBalance(v) {
+  const next = Math.max(0, Math.floor(v));
+  const diff = next - balance;
+  balance = next;
+  renderBalance();
+  syncTransaction(diff);
+}
+
+function addStars(v) {
+  setBalance(balance + v);
+}
+
+function updateInvCount() {
+  const el = document.getElementById('invCount'); if (el) el.textContent = '(' + inventory.length + ')';
+}
+
   document.getElementById('balanceDisplay').textContent = Math.floor(balance);
   const pb = document.getElementById('profileBalance'); if(pb) pb.textContent = Math.floor(balance) + ' ⭐';
   const pi = document.getElementById('profileInv'); if(pi) pi.textContent = inventory.length;
@@ -1416,7 +1473,7 @@ function initLadder() {
    ИНИЦИАЛИЗАЦИЯ
    ============================================================ */
 document.addEventListener('DOMContentLoaded', async () => {
-  loadState();
+  await loadState();
   await initFairness();
   renderGifts();
   drawFortuneWheel();
