@@ -434,6 +434,15 @@
         <div class="stat-item"><div class="stat-key">Баланс</div><div class="stat-val gold" id="profileBalance">0 ⭐</div></div>
         <div class="stat-item" style="text-align:right;"><div class="stat-key">Подарков</div><div class="stat-val" id="profileInv">0</div></div>
       </div>
+            <div class="stat-block" style="margin-bottom:8px;cursor:pointer;" onclick="copyUserId()">
+        <div class="stat-item">
+          <div class="stat-key">Ваш Telegram ID (нажмите, чтобы скопировать)</div>
+          <div class="stat-val" id="profileUserId">Определяется...</div>
+        </div>
+        <div class="stat-item" style="text-align:right;">
+          <div class="stat-val green" style="font-size:12px;">📋 Копия</div>
+        </div>
+      </div>
       <button class="btn-secondary" onclick="localStorage.clear();location.reload();" style="color:var(--red);border-color:rgba(255,77,79,.3);">Сбросить прогресс</button>
     </div>
   </section>
