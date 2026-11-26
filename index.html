@@ -1365,32 +1365,42 @@ document.getElementById('fairClientSeed').addEventListener('change', (e) => {
   fairness.clientSeed = e.target.value || 'player-seed';
   saveFairness();
 });
-// КНОПКА "+" — АКТИВАЦИЯ КОДА ИЗ ВАШЕЙ АДМИНКИ
+// КНОПКА "+" — АКТИВАЦИЯ ПЕРСОНАЛЬНОГО КОДА ИЗ БОТА
 document.getElementById('btnTopup').addEventListener('click', async () => {
   haptic('light');
-  const raw = prompt('Введите код пополнения (например, RADAR-500-...):');
+  const raw = prompt('Введите код пополнения:');
   if (!raw) return;
   const code = raw.trim().toUpperCase();
 
   if (usedPromos.includes(code)) {
-    toast('❌ Этот код уже был активирован!');
+    toast('❌ Этот код уже был активирован');
     haptic('error');
     return;
   }
 
-  // Проверка формата RADAR-СУММА-НОМЕР-ПОДПИСЬ
+  // Новый формат: RADAR-СУММА-USERID-НОМЕР-ПОДПИСЬ (5 частей)
   const parts = code.split('-');
-  if (parts.length !== 4 || parts[0] !== 'RADAR') {
+  if (parts.length !== 5 || parts[0] !== 'RADAR') {
     toast('❌ Неверный формат кода');
     haptic('error');
     return;
   }
 
   const amount = parseInt(parts[1], 10);
-  const nonce = parts[2];
-  const providedSig = parts[3];
+  const targetUserId = parts[2];
+  const nonce = parts[3];
+  const providedSig = parts[4];
 
-  const expectedHash = (await sha256Hex(`${SECRET_SALT}:${amount}:${nonce}`)).toUpperCase();
+  // Проверка, что код вводит именно его владелец
+  const currentUserId = String(tg?.initDataUnsafe?.user?.id || '');
+  if (!currentUserId || targetUserId !== currentUserId) {
+    toast('🚫 Этот код выпущен для другого аккаунта');
+    haptic('error');
+    return;
+  }
+
+  // Хеш с привязкой к ID игрока и длиной подписи 4 символа
+  const expectedHash = (await sha256Hex(`${SECRET_SALT}:${amount}:${targetUserId}:${nonce}`)).toUpperCase();
   const expectedSig = expectedHash.slice(0, 4);
 
   if (providedSig === expectedSig && amount >= 500) {
@@ -1403,6 +1413,7 @@ document.getElementById('btnTopup').addEventListener('click', async () => {
     haptic('error');
   }
 });
+
 
 // КНОПКА "−" — СОЗДАНИЕ ПОДПИСАННОГО ЧЕКА НА ВЫВОД ДЛЯ АДМИНКИ
 document.getElementById('btnWithdraw').addEventListener('click', async () => {
