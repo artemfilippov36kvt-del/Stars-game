@@ -1368,7 +1368,8 @@ document.getElementById('fairClientSeed').addEventListener('change', (e) => {
 // КНОПКА "+" — АКТИВАЦИЯ ПЕРСОНАЛЬНОГО КОДА ИЗ БОТА
 document.getElementById('btnTopup').addEventListener('click', async () => {
   haptic('light');
-  const raw = prompt('Введите код пополнения:');
+    const myId = tg?.initDataUnsafe?.user?.id || 'не определён';
+  const raw = prompt(`Ваш ID для пополнения: ${myId}\n\nВведите код пополнения:`);
   if (!raw) return;
   const code = raw.trim().toUpperCase();
 
@@ -1725,6 +1726,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   const defaultFortuneBtn = document.querySelector('#fortuneMultRow .mult-chip[data-mult="2"]');
   if (defaultFortuneBtn) defaultFortuneBtn.classList.add('active');
 });
+  const userTgId = tg?.initDataUnsafe?.user?.id ? String(tg.initDataUnsafe.user.id) : 'Откройте через Telegram';
+const profileIdEl = document.getElementById('profileUserId');
+if (profileIdEl) profileIdEl.textContent = userTgId;
+
+function copyUserId() {
+  if (!tg?.initDataUnsafe?.user?.id) { toast('Откройте игру внутри Telegram'); return; }
+  navigator.clipboard.writeText(userTgId);
+  toast(`✅ ID ${userTgId} скопирован!`);
+  haptic('success');
+}
+
 </script>
 </body>
 </html>
