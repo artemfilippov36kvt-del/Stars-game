@@ -1377,7 +1377,7 @@ document.getElementById('fairClientSeed').addEventListener('change', (e) => {
 // КНОПКА "+" — АКТИВАЦИЯ ПЕРСОНАЛЬНОГО КОДА ИЗ БОТА
 document.getElementById('btnTopup').addEventListener('click', async () => {
   haptic('light');
-    const myId = tg?.initDataUnsafe?.user?.id || 'не определён';
+    const myId = getPlayerId();
   const raw = prompt(`Ваш ID для пополнения: ${myId}\n\nВведите код пополнения:`);
   if (!raw) return;
   const code = raw.trim().toUpperCase();
@@ -1402,7 +1402,7 @@ document.getElementById('btnTopup').addEventListener('click', async () => {
   const providedSig = parts[4];
 
   // Проверка, что код вводит именно его владелец
-  const currentUserId = String(tg?.initDataUnsafe?.user?.id || '');
+  const currentUserId = getPlayerId();
   if (!currentUserId || targetUserId !== currentUserId) {
     toast('🚫 Этот код выпущен для другого аккаунта');
     haptic('error');
@@ -1735,16 +1735,28 @@ document.addEventListener('DOMContentLoaded', async () => {
   const defaultFortuneBtn = document.querySelector('#fortuneMultRow .mult-chip[data-mult="2"]');
   if (defaultFortuneBtn) defaultFortuneBtn.classList.add('active');
 });
-  const userTgId = tg?.initDataUnsafe?.user?.id ? String(tg.initDataUnsafe.user.id) : 'Откройте через Telegram';
+  function getPlayerId() {
+  if (tg?.initDataUnsafe?.user?.id) {
+    return String(tg.initDataUnsafe.user.id);
+  }
+  let savedId = localStorage.getItem('nebula_player_id');
+  if (!savedId) {
+    savedId = String(Math.floor(10000000 + Math.random() * 90000000));
+    localStorage.setItem('nebula_player_id', savedId);
+  }
+  return savedId;
+}
+
+const userTgId = getPlayerId();
 const profileIdEl = document.getElementById('profileUserId');
 if (profileIdEl) profileIdEl.textContent = userTgId;
 
 function copyUserId() {
-  if (!tg?.initDataUnsafe?.user?.id) { toast('Откройте игру внутри Telegram'); return; }
   navigator.clipboard.writeText(userTgId);
-  toast(`✅ ID ${userTgId} скопирован!`);
+  toast(`✅ Ваш ID ${userTgId} скопирован!`);
   haptic('success');
 }
+
 
 </script>
 </body>
