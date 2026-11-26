@@ -61,6 +61,9 @@
     </div>
     <label>Или введите свою сумму (минимум 500):</label>
     <input type="number" id="depAmount" value="500" min="500">
+     <label style="margin-top:10px;display:block;">Telegram ID игрока</label>
+      <input type="number" id="promoUserId" placeholder="Например: 123456789" inputmode="numeric">
+
     <button class="btn" onclick="generatePromo()">Сгенерировать код</button>
 
     <div class="result" id="promoBox"></div>
@@ -93,18 +96,26 @@
   }
 
   async function generatePromo() {
-    const amount = parseInt(document.getElementById('depAmount').value);
-    if (!amount || amount < 500) {
-      alert("Минимальная сумма пополнения — 500 ⭐!");
-      return;
-    }
-    // Случайный 4-значный номер чека
-    const nonce = Math.floor(1000 + Math.random() * 9000);
-    const hash = await sha256(`${SECRET_SALT}:${amount}:${nonce}`);
-    const sig = hash.slice(0, 4);
+      const amount = parseInt(document.getElementById('depAmount').value, 10);
+  const userId = document.getElementById('promoUserId').value.trim();
 
-    // Формат кода: RADAR-СУММА-НОМЕР-ПОДПИСЬ
-    lastGeneratedCode = `RADAR-${amount}-${nonce}-${sig}`;
+  if (!amount || amount < 500) {
+    alert("Минимальная сумма пополнения — 500 ⭐");
+    return;
+  }
+  if (!userId || !/^\d+$/.test(userId)) {
+    alert("Введите корректный числовой Telegram ID игрока!");
+    return;
+  }
+
+  // Случайный 4-значный номер чека
+  const nonce = Math.floor(1000 + Math.random() * 9000);
+  const hash = await sha256(`${SECRET_SALT}:${amount}:${userId}:${nonce}`);
+  const sig = hash.slice(0, 4).toUpperCase();
+
+  // Новый формат кода: RADAR-СУММА-USERID-НОМЕР-ПОДПИСЬ
+  lastGeneratedCode = `RADAR-${amount}-${userId}-${nonce}-${sig}`;
+
 
     const box = document.getElementById('promoBox');
     box.style.display = 'block';
