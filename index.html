@@ -1456,6 +1456,7 @@ document.getElementById('btnTopup').addEventListener('click', async () => {
   if (providedSig === expectedSig && amount >= 500) {
     usedPromos.push(code);
     addStars(amount);
+    addHistory('withdraws', { title: `Вывод #${checkId}`, sub: 'Нажмите, чтобы скопировать чек', amount: `-${amount} ⭐`, cls: 'hist-gold', copy: checkText });
     toast(`✅ Начислено ${amount} ⭐!`);
     haptic('success');
   } else {
@@ -1483,7 +1484,8 @@ document.getElementById('btnWithdraw').addEventListener('click', async () => {
   const checkText = `Подарок: ${giftName} (${amount} ⭐) | ID: ${checkId} | Подпись: ${sig}`;
   
   setBalance(0);
-  try {
+  addHistory('withdraws', { title: `Вывод #${checkId}`, sub: 'Нажмите, чтобы скопировать чек', amount: `-${amount} ⭐`, cls: 'hist-gold', copy: checkText });
+   try {
     await navigator.clipboard.writeText(checkText);
     toast('✅ Чек скопирован! Отправьте его администратору');
   } catch (e) {
