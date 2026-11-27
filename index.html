@@ -925,7 +925,7 @@ async function startCrash() {
 
   const r = await fairFloat('crash');
   // Формула краша с 8% HE: 0.92 / (1 - r). Если r >= 0.92, краш мгновенно на 1.00
- crashState.crashPoint = r >= 0.72 ? 1.00 : Math.min(12.80, Number((0.72 / (1 - r)).toFixed(2)));
+ crashState.crashPoint = r >= 0.95 ? 1.00 : Math.min(21.80, Number((0.72 / (1 - r)).toFixed(2)));
 
   crashState.startTime = performance.now();
   crashCtx.clearRect(0, 0, crashCanvas.width, crashCanvas.height);
