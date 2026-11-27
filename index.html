@@ -272,7 +272,6 @@
 <main class="main-scroll">
   <!-- GAMES LOBBY -->
 <section class="screen active" id="screen-games">
-  <div class="back-bar"><button class="back-btn" onclick="openGame('games')">← Все игры</button><span style="font-weight:800;font-size:15px;">Мины</span></div>
   <div class="games-grid">
     <div class="game-tile" onclick="openGame('mines')"><div class="game-badge">x24</div><div class="game-ico">💣</div><div class="game-title">Мины</div><div class="game-desc">Открывай звёзды, обходи бомбы</div></div>
     <div class="game-tile" onclick="openGame('crash')"><div class="game-badge">x100</div><div class="game-ico">🚀</div><div class="game-title">Краш</div><div class="game-desc">Забери до взрыва ракеты</div></div>
@@ -284,7 +283,7 @@
 </section>
 
   <!-- MINES -->
-  <class="screen active" id="screen-mines">
+  <class="screen" id="screen-mines">
     <div class="card">
       <div class="card-label">Ставка</div>
       <div class="bet-row"><input type="number" class="bet-input" id="minesBet" value="100" min="1" step="1" inputmode="numeric"></div>
@@ -486,12 +485,21 @@
 </section>
 
 <nav class="bottom-nav" style="justify-content:space-around;">
-  <button class="nav-btn active" data-screen="games" style="flex:1;">...</button>
-  <button class="nav-btn" data-screen="cases" style="flex:1;">...</button>
-  <button class="nav-btn" data-screen="profile" style="flex:1;">...</button>
+  <button class="nav-btn active" data-screen="games" style="flex:1;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="4"/><path d="M6 12h4M8 10v4M15 11h.01M18 13h.01"/></svg>
+    <span>Игры</span>
+  </button>
+  <button class="nav-btn" data-screen="cases" style="flex:1;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 00-8 0v2"/></svg>
+    <span>Кейсы</span>
+  </button>
+  <button class="nav-btn" data-screen="profile" style="flex:1;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span>Профиль</span>
+  </button>
 </nav>
 
- <div class="toast" id="toast"></div>
+<div class="toast" id="toast"></div>
 
 <!-- FAIRNESS MODAL -->
 <div class="modal-overlay" id="fairnessModal">
