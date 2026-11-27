@@ -714,6 +714,14 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
   });
 });
 
+  function openGame(name) {
+  haptic('light');
+  Object.keys(screens).forEach(k => screens[k].classList.toggle('active', k === name));
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.screen === (name === 'cases' ? 'cases' : name === 'profile' ? 'profile' : 'games'));
+  });
+}
+
 const betInputMap = { mines:'minesBet', ladder:'ladderBet', crash:'crashBet', fortune:'fortuneBet', bj:'bjBet' };
 document.querySelectorAll('[data-bet-game]').forEach(chip => {
   chip.addEventListener('click', () => {
@@ -1789,6 +1797,66 @@ function copyUserId() {
   haptic('success');
 }
 
+/* ============================================================
+   ИСТОРИЯ ИГР, ПОПОЛНЕНИЙ И ВЫВОДОВ
+   ============================================================ */
+let currentHistTab = 'games';
+const GAME_NAMES = { mines:'Мины', ladder:'Лесенка', cases:'Кейсы', crash:'Краш', fortune:'Фортуна', blackjack:'Блэкджек' };
+
+function getHist(type) {
+  try { return JSON.parse(localStorage.getItem('nebula_hist_' + type) || '[]'); } catch (e) { return []; }
+}
+
+function addHistory(type, item) {
+  const list = getHist(type);
+  const time = new Date().toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' });
+  list.unshift({ ...item, time });
+  if (list.length > 50) list.length = 50;
+  localStorage.setItem('nebula_hist_' + type, JSON.stringify(list));
+  if (currentHistTab === type) renderHistory();
+}
+
+function switchHistTab(type, btn) {
+  currentHistTab = type;
+  document.querySelectorAll('.hist-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderHistory();
+}
+
+function renderHistory() {
+  const el = document.getElementById('profileHistList');
+  if (!el) return;
+  const list = getHist(currentHistTab);
+  if (!list.length) {
+    el.innerHTML = '<div style="text-align:center;padding:18px;color:var(--text-mute);font-size:12px;">Записей пока нет</div>';
+    return;
+  }
+  el.innerHTML = list.map(item => `
+    <div class="hist-item" ${item.copy ? `onclick="navigator.clipboard.writeText('${item.copy}');toast('Чек скопирован!')" style="cursor:pointer;"` : ''}>
+      <div>
+        <div style="font-weight:700;">${item.title}</div>
+        <div style="font-size:10px;color:var(--text-mute);">${item.sub || ''} · ${item.time}</div>
+      </div>
+      <div class="${item.cls || ''}">${item.amount}</div>
+    </div>
+  `).join('');
+}
+
+const _origRecordRound = recordRound;
+recordRound = async function(game, win, extra) {
+  await _origRecordRound(game, win, extra);
+  const title = GAME_NAMES[game] || game;
+  const bet = extra?.bet || extra?.case || 0;
+  const isWin = win === true;
+  addHistory('games', {
+    title,
+    sub: bet ? `Ставка: ${bet} ⭐` : 'Раунд',
+    amount: isWin ? 'Победа' : win === 'push' ? 'Ничья' : 'Проигрыш',
+    cls: isWin ? 'hist-win' : win === 'push' ? 'hist-gold' : 'hist-lose'
+  });
+};
+
+renderHistory();
 
 </script>
 </body>
