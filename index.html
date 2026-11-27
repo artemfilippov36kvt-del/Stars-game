@@ -270,8 +270,21 @@
 </header>
 
 <main class="main-scroll">
+  <!-- GAMES LOBBY -->
+<section class="screen active" id="screen-games">
+  <div class="back-bar"><button class="back-btn" onclick="openGame('games')">← Все игры</button><span style="font-weight:800;font-size:15px;">Мины</span></div>
+  <div class="games-grid">
+    <div class="game-tile" onclick="openGame('mines')"><div class="game-badge">x24</div><div class="game-ico">💣</div><div class="game-title">Мины</div><div class="game-desc">Открывай звёзды, обходи бомбы</div></div>
+    <div class="game-tile" onclick="openGame('crash')"><div class="game-badge">x100</div><div class="game-ico">🚀</div><div class="game-title">Краш</div><div class="game-desc">Забери до взрыва ракеты</div></div>
+    <div class="game-tile" onclick="openGame('ladder')"><div class="game-badge">x10</div><div class="game-ico">🪜</div><div class="game-title">Лесенка</div><div class="game-desc">Поднимись на 10 этажей</div></div>
+    <div class="game-tile" onclick="openGame('fortune')"><div class="game-badge">x50</div><div class="game-ico">🎡</div><div class="game-title">Фортуна</div><div class="game-desc">Крути колесо множителей</div></div>
+    <div class="game-tile" onclick="openGame('blackjack')"><div class="game-badge">21</div><div class="game-ico">🃏</div><div class="game-title">Блэкджек</div><div class="game-desc">Набери 21 и обыграй дилера</div></div>
+    <div class="game-tile" onclick="openGame('gifts')"><div class="game-badge">NFT</div><div class="game-ico">🎁</div><div class="game-title">Подарки</div><div class="game-desc">Магазин и твой инвентарь</div></div>
+  </div>
+</section>
+
   <!-- MINES -->
-  <section class="screen active" id="screen-mines">
+  <class="screen active" id="screen-mines">
     <div class="card">
       <div class="card-label">Ставка</div>
       <div class="bet-row"><input type="number" class="bet-input" id="minesBet" value="100" min="1" step="1" inputmode="numeric"></div>
@@ -450,24 +463,35 @@
   <section class="screen" id="screen-profile">
   <div class="card">
     <div class="sheet-title">Профиль игрока</div>
-    <div class="sheet-sub">Статистика, ID и история операций</div>
-    <!-- Статистика баланса и ID, переключатели вкладок (Игры, Пополнения, Выводы) и кнопка сброса -->
+    <div class="sheet-sub">Ваша статистика и история операций</div>
+    <div class="stat-block" style="margin-bottom:8px;">
+      <div class="stat-item"><div class="stat-key">Баланс</div><div class="stat-val gold" id="profileBalance">0 ⭐</div></div>
+      <div class="stat-item" style="text-align:right;"><div class="stat-key">Подарков</div><div class="stat-val" id="profileInv">0</div></div>
+    </div>
+    <div class="stat-block" onclick="copyUserId()" style="cursor:pointer;margin-bottom:8px;">
+      <div class="stat-item">
+        <div class="stat-key">Ваш Telegram ID (нажмите, чтобы скопировать)</div>
+        <div class="stat-val" id="profileUserId">—</div>
+      </div>
+      <span style="font-size:16px;">📋</span>
+    </div>
+    <div class="hist-tabs">
+      <button class="hist-tab active" data-htab="games" onclick="switchHistTab('games', this)">Игры</button>
+      <button class="hist-tab" data-htab="topups" onclick="switchHistTab('topups', this)">Пополнения</button>
+      <button class="hist-tab" data-htab="withdraws" onclick="switchHistTab('withdraws', this)">Выводы</button>
+    </div>
+    <div class="hist-list" id="profileHistList" style="margin-bottom:10px;"></div>
+    <button class="btn-secondary" onclick="localStorage.clear();location.reload();" style="color:var(--red);border-color:rgba(255,77,109,.3);">Сбросить прогресс</button>
   </div>
 </section>
-</main>
 
-<nav class="bottom-nav">
-  <button class="nav-btn active" data-screen="mines"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7"/><path d="M12 6V4M9 9l.01.01M15 9l.01.01M10 15h4"/></svg><span>Мины</span></button>
-  <button class="nav-btn" data-screen="ladder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M6 21V3M10 21V8M14 21V12M18 21V17"/></svg><span>Лесенка</span></button>
-  <button class="nav-btn" data-screen="cases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 00-8 0v2"/></svg><span>Кейсы</span></button>
-  <button class="nav-btn" data-screen="crash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>Краш</span></button>
-  <button class="nav-btn" data-screen="fortune"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 4"/></svg><span>Фортуна</span></button>
-  <button class="nav-btn" data-screen="blackjack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8h20"/></svg><span>Блэкджек</span></button>
-  <button class="nav-btn" data-screen="gifts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M3 12h18M12 8v13"/></svg><span>Подарки</span></button>
-  <button class="nav-btn" data-screen="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Профиль</span></button>
+<nav class="bottom-nav" style="justify-content:space-around;">
+  <button class="nav-btn active" data-screen="games" style="flex:1;">...</button>
+  <button class="nav-btn" data-screen="cases" style="flex:1;">...</button>
+  <button class="nav-btn" data-screen="profile" style="flex:1;">...</button>
 </nav>
 
-<div class="toast" id="toast"></div>
+ <div class="toast" id="toast"></div>
 
 <!-- FAIRNESS MODAL -->
 <div class="modal-overlay" id="fairnessModal">
@@ -749,10 +773,10 @@ function generateCaseWeights(casePrice, poolIds) {
   const pool = GIFTS.filter(g => poolIds.includes(g.id)).sort((a, b) => a.price - b.price);
   if (pool.length === 0) return [];
 
-  const rawWeights = pool.map(g => {
+    const rawWeights = pool.map(g => {
     const ratio = g.price / casePrice;
-    if (ratio <= 1) return 1 / Math.pow(ratio, 0.7);
-    return 1 / Math.pow(ratio, 1.45);
+    if (ratio <= 1) return 1 / Math.pow(ratio, 0.35);
+    return 1 / Math.pow(ratio, 0.95);
   });
 
   const sumWeights = rawWeights.reduce((a, b) => a + b, 0);
