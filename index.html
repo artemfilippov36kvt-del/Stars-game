@@ -1523,7 +1523,7 @@ function calcMinesMult(opened, minesCount) {
     mult *= (25 - i) / (25 - minesCount - i);
   }
   // Сжимаем рост (Math.pow(..., 0.55)) и снижаем базовую отдачу до 0.70 (вместо 0.92)
-  return Math.max(1.01, Math.pow(mult, 0.8) * 0.89);
+  return Math.max(1.01, Math.pow(mult, 0.83) * 0.91);
 }
 
 function initMinesGrid() {
